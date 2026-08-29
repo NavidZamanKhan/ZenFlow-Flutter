@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/zenflow_theme.dart';
@@ -18,6 +19,7 @@ class AuthTabSwitcher extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final zen = context.zenColors;
+    final isLogin = activeTab == AuthTab.login;
 
     return Container(
       height: 48,
@@ -27,69 +29,82 @@ class AuthTabSwitcher extends StatelessWidget {
         borderRadius: BorderRadius.circular(100),
         border: Border.all(color: zen.border),
       ),
-      child: Row(
+      child: Stack(
         children: [
-          Expanded(
-            child: _TabButton(
-              title: 'Log in',
-              isActive: activeTab == AuthTab.login,
-              onTap: () => onTabChanged(AuthTab.login),
+          // --- 1. The Physical Sliding Thumb Pill ---
+          AnimatedAlign(
+            duration: const Duration(milliseconds: 260),
+            curve: Curves.easeInOutCubic,
+            alignment: isLogin ? Alignment.centerLeft : Alignment.centerRight,
+            child: FractionallySizedBox(
+              widthFactor: 0.5,
+              heightFactor: 1.0,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: zen.card,
+                  borderRadius: BorderRadius.circular(100),
+                  border: Border.all(
+                    color: zen.border.withValues(alpha: 0.5),
+                    width: 0.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: zen.isDark ? 0.3 : 0.06),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
-          Expanded(
-            child: _TabButton(
-              title: 'Sign up',
-              isActive: activeTab == AuthTab.register,
-              onTap: () => onTabChanged(AuthTab.register),
-            ),
+
+          // --- 2. Interactive Touch Target & Label Layer ---
+          Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {
+                    if (!isLogin) {
+                      HapticFeedback.selectionClick();
+                      onTabChanged(AuthTab.login);
+                    }
+                  },
+                  child: Center(
+                    child: AnimatedDefaultTextStyle(
+                      duration: const Duration(milliseconds: 200),
+                      style: AppTextStyles.labelMedium(
+                        isLogin ? zen.textPrimary : zen.textSecondary,
+                      ),
+                      child: const Text('Log in'),
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {
+                    if (isLogin) {
+                      HapticFeedback.selectionClick();
+                      onTabChanged(AuthTab.register);
+                    }
+                  },
+                  child: Center(
+                    child: AnimatedDefaultTextStyle(
+                      duration: const Duration(milliseconds: 200),
+                      style: AppTextStyles.labelMedium(
+                        !isLogin ? zen.textPrimary : zen.textSecondary,
+                      ),
+                      child: const Text('Sign up'),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _TabButton extends StatelessWidget {
-  final String title;
-  final bool isActive;
-  final VoidCallback onTap;
-
-  const _TabButton({
-    required this.title,
-    required this.isActive,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final zen = context.zenColors;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeInOut,
-        decoration: BoxDecoration(
-          color: isActive ? zen.card : Colors.transparent,
-          borderRadius: BorderRadius.circular(100),
-          boxShadow: isActive
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: zen.isDark ? 0.2 : 0.05),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
-        ),
-        child: Center(
-          child: Text(
-            title,
-            style: AppTextStyles.labelMedium(
-              isActive ? zen.textPrimary : zen.textSecondary,
-            ),
-          ),
-        ),
       ),
     );
   }

@@ -39,7 +39,7 @@ dependencies:
   flutter_lucide: ^1.35.0
   flutter_bloc: ^9.1.1
   equatable: ^2.1.0
-
+  google_sign_in: ^6.2.1
 dev_dependencies:
   flutter_test:
     sdk: flutter

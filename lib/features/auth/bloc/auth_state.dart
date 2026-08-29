@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../models/pending_registration_model.dart';
 import '../models/user_model.dart';
 
 abstract class AuthState extends Equatable {
@@ -26,6 +27,33 @@ class AuthenticatedState extends AuthState {
 
   @override
   List<Object?> get props => [user];
+}
+
+class PendingOtpState extends AuthState {
+  final PendingRegistrationModel pendingRegistration;
+  final bool isResending;
+  final String? resendMessage;
+
+  const PendingOtpState({
+    required this.pendingRegistration,
+    this.isResending = false,
+    this.resendMessage,
+  });
+
+  PendingOtpState copyWith({
+    PendingRegistrationModel? pendingRegistration,
+    bool? isResending,
+    String? resendMessage,
+  }) {
+    return PendingOtpState(
+      pendingRegistration: pendingRegistration ?? this.pendingRegistration,
+      isResending: isResending ?? this.isResending,
+      resendMessage: resendMessage,
+    );
+  }
+
+  @override
+  List<Object?> get props => [pendingRegistration, isResending, resendMessage];
 }
 
 class UnauthenticatedState extends AuthState {}

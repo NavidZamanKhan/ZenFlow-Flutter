@@ -11,7 +11,8 @@ import 'social_auth_button.dart';
 
 class RegisterFormWidget extends StatefulWidget {
   final VoidCallback onSwitchToLogin;
-  final Function(String fullName, String email, String password)? onRegisterSubmit;
+  final Function(String fullName, String email, String password, String confirmPassword)?
+      onRegisterSubmit;
   final VoidCallback? onGoogleLogin;
 
   const RegisterFormWidget({
@@ -42,6 +43,50 @@ class _RegisterFormWidgetState extends State<RegisterFormWidget> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
+  }
+
+  void _handleSubmit() {
+    final fullName = _fullNameController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    final confirmPassword = _confirmPasswordController.text;
+
+    if (fullName.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter your full name.')),
+      );
+      return;
+    }
+
+    if (email.isEmpty || !email.contains('@')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid email address.')),
+      );
+      return;
+    }
+
+    if (password.length < 8) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Password must be at least 8 characters long.')),
+      );
+      return;
+    }
+
+    if (password != confirmPassword) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Passwords do not match.')),
+      );
+      return;
+    }
+
+    if (!_agreedToTerms) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please agree to the Terms and Privacy Policy.')),
+      );
+      return;
+    }
+
+    widget.onRegisterSubmit?.call(fullName, email, password, confirmPassword);
   }
 
   @override
@@ -197,13 +242,7 @@ class _RegisterFormWidgetState extends State<RegisterFormWidget> {
         // Create Account Button
         ZenButton(
           label: 'Create account',
-          onPressed: () {
-            widget.onRegisterSubmit?.call(
-              _fullNameController.text.trim(),
-              _emailController.text.trim(),
-              _passwordController.text,
-            );
-          },
+          onPressed: _handleSubmit,
         ),
         const SizedBox(height: 20),
 

@@ -12,6 +12,7 @@ import '../bloc/auth_state.dart';
 import '../widgets/auth_tab_switcher.dart';
 import '../widgets/login_form_widget.dart';
 import '../widgets/register_form_widget.dart';
+import 'otp_verification_view.dart';
 
 class AuthScreen extends StatefulWidget {
   final AuthTab initialTab;
@@ -38,6 +39,29 @@ class _AuthScreenState extends State<AuthScreen> {
 
   void _onGoogleSignIn(BuildContext context) {
     context.read<AuthBloc>().add(GoogleSignInRequestedEvent());
+  }
+
+  void _onLoginSubmit(BuildContext context, String email, String password) {
+    context.read<AuthBloc>().add(
+          LoginSubmittedEvent(email: email, password: password),
+        );
+  }
+
+  void _onRegisterSubmit(
+    BuildContext context,
+    String fullName,
+    String email,
+    String password,
+    String confirmPassword,
+  ) {
+    context.read<AuthBloc>().add(
+          RegisterSubmittedEvent(
+            fullName: fullName,
+            email: email,
+            password: password,
+            confirmPassword: confirmPassword,
+          ),
+        );
   }
 
   @override
@@ -123,95 +147,99 @@ class _AuthScreenState extends State<AuthScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  // Main Auth Card Container
-                  ZenCard(
-                    padding: const EdgeInsets.all(22),
-                    borderRadius: 24,
-                    child: Column(
-                      children: [
-                        // Segmented Log In / Sign Up Switcher
-                        AuthTabSwitcher(
-                          activeTab: _activeTab,
-                          onTabChanged: (tab) {
-                            setState(() {
-                              _activeTab = tab;
-                            });
-                          },
-                        ),
-                        const SizedBox(height: 24),
+                  // If in OTP state: render OtpVerificationView
+                  if (state is PendingOtpState)
+                    OtpVerificationView(
+                      pendingRegistration: state.pendingRegistration,
+                    )
+                  else
+                    // Main Auth Card Container (Login / Register)
+                    ZenCard(
+                      padding: const EdgeInsets.all(22),
+                      borderRadius: 24,
+                      child: Column(
+                        children: [
+                          // Segmented Log In / Sign Up Switcher
+                          AuthTabSwitcher(
+                            activeTab: _activeTab,
+                            onTabChanged: (tab) {
+                              setState(() {
+                                _activeTab = tab;
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 24),
 
-                        // Loading banner if authenticating
-                        if (isLoading) ...[
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 16),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(zen.accent),
+                          // Loading banner if authenticating
+                          if (isLoading) ...[
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(zen.accent),
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(width: 10),
-                                Text(
-                                  state.message ?? 'Please wait...',
-                                  style: AppTextStyles.labelSmall(zen.accent),
-                                ),
-                              ],
+                                  const SizedBox(width: 10),
+                                  Text(
+                                    state.message ?? 'Please wait...',
+                                    style: AppTextStyles.labelSmall(zen.accent),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+
+                          // Animated Transition between Login and Register
+                          AnimatedCrossFade(
+                            duration: const Duration(milliseconds: 250),
+                            crossFadeState: _activeTab == AuthTab.login
+                                ? CrossFadeState.showFirst
+                                : CrossFadeState.showSecond,
+                            firstChild: LoginFormWidget(
+                              onSwitchToRegister: () {
+                                setState(() {
+                                  _activeTab = AuthTab.register;
+                                });
+                              },
+                              onForgotPassword: () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Password reset flow coming in Step 2.4'),
+                                  ),
+                                );
+                              },
+                              onLoginSubmit: (email, password, rememberMe) {
+                                _onLoginSubmit(context, email, password);
+                              },
+                              onGoogleLogin: () => _onGoogleSignIn(context),
+                            ),
+                            secondChild: RegisterFormWidget(
+                              onSwitchToLogin: () {
+                                setState(() {
+                                  _activeTab = AuthTab.login;
+                                });
+                              },
+                              onRegisterSubmit: (fullName, email, password, confirmPassword) {
+                                _onRegisterSubmit(
+                                  context,
+                                  fullName,
+                                  email,
+                                  password,
+                                  confirmPassword,
+                                );
+                              },
+                              onGoogleLogin: () => _onGoogleSignIn(context),
                             ),
                           ),
                         ],
-
-                        // Animated Transition between Login and Register
-                        AnimatedCrossFade(
-                          duration: const Duration(milliseconds: 250),
-                          crossFadeState: _activeTab == AuthTab.login
-                              ? CrossFadeState.showFirst
-                              : CrossFadeState.showSecond,
-                          firstChild: LoginFormWidget(
-                            onSwitchToRegister: () {
-                              setState(() {
-                                _activeTab = AuthTab.register;
-                              });
-                            },
-                            onForgotPassword: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Forgot Password flow is next in Step 2.3'),
-                                ),
-                              );
-                            },
-                            onLoginSubmit: (email, password, rememberMe) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Email login for $email is next in Step 2.3'),
-                                ),
-                              );
-                            },
-                            onGoogleLogin: () => _onGoogleSignIn(context),
-                          ),
-                          secondChild: RegisterFormWidget(
-                            onSwitchToLogin: () {
-                              setState(() {
-                                _activeTab = AuthTab.login;
-                              });
-                            },
-                            onRegisterSubmit: (fullName, email, password) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Registration for $fullName is next in Step 2.3'),
-                                ),
-                              );
-                            },
-                            onGoogleLogin: () => _onGoogleSignIn(context),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
 
                   const SizedBox(height: 20),
                 ],

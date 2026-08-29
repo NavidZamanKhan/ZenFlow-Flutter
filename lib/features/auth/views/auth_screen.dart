@@ -15,10 +15,12 @@ import '../widgets/register_form_widget.dart';
 
 class AuthScreen extends StatefulWidget {
   final AuthTab initialTab;
+  final bool isRoot;
 
   const AuthScreen({
     super.key,
     this.initialTab = AuthTab.register,
+    this.isRoot = false,
   });
 
   @override
@@ -51,7 +53,9 @@ class _AuthScreenState extends State<AuthScreen> {
               content: Text('Welcome back, ${state.user.fullName}!'),
             ),
           );
-          Navigator.of(context).maybePop();
+          if (!widget.isRoot) {
+            Navigator.of(context).maybePop();
+          }
         } else if (state is AuthFailureState) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -71,7 +75,7 @@ class _AuthScreenState extends State<AuthScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               child: Column(
                 children: [
-                  // Top Bar with Brand Logo and Close Button
+                  // Top Bar with Brand Logo and optional Close Button
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -109,11 +113,12 @@ class _AuthScreenState extends State<AuthScreen> {
                           ),
                         ],
                       ),
-                      ZenIconButton(
-                        icon: LucideIcons.x,
-                        size: 38,
-                        onTap: () => Navigator.of(context).maybePop(),
-                      ),
+                      if (!widget.isRoot)
+                        ZenIconButton(
+                          icon: LucideIcons.x,
+                          size: 38,
+                          onTap: () => Navigator.of(context).maybePop(),
+                        ),
                     ],
                   ),
                   const SizedBox(height: 20),

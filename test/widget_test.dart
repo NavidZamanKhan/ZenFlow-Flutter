@@ -6,7 +6,7 @@ import 'package:zenflow_flutter/features/auth/bloc/auth_bloc.dart';
 import 'package:zenflow_flutter/main.dart';
 
 void main() {
-  testWidgets('ZenFlow App Theme with MultiBlocProvider smoke test', (WidgetTester tester) async {
+  testWidgets('ZenFlow App AuthGate smoke test', (WidgetTester tester) async {
     await tester.pumpWidget(
       MultiBlocProvider(
         providers: [
@@ -20,6 +20,6 @@ void main() {
 
     // Verify ZenFlow branding is rendered
     expect(find.text('ZenFlow'), findsWidgets);
-    expect(find.text('Theme Appearance'), findsOneWidget);
+    expect(find.text('Create your account'), findsOneWidget);
   });
 }

@@ -6,7 +6,7 @@ import 'core/theme/bloc/theme_state.dart';
 import 'core/theme/zenflow_theme.dart';
 import 'features/auth/bloc/auth_bloc.dart';
 import 'features/auth/bloc/auth_event.dart';
-import 'features/showcase/views/theme_showcase_screen.dart';
+import 'features/auth/views/auth_gate.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,7 +38,7 @@ class ZenFlowApp extends StatelessWidget {
           themeMode: themeState.themeMode,
           theme: ZenFlowTheme.lightTheme(themeState.accentColor),
           darkTheme: ZenFlowTheme.darkTheme(themeState.accentColor),
-          home: const ThemeShowcaseScreen(),
+          home: const AuthGate(),
         );
       },
     );

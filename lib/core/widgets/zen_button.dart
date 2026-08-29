@@ -13,6 +13,7 @@ class ZenButton extends StatelessWidget {
   final bool isLoading;
   final double height;
   final double? width;
+  final EdgeInsetsGeometry? padding;
 
   const ZenButton({
     super.key,
@@ -23,6 +24,7 @@ class ZenButton extends StatelessWidget {
     this.isLoading = false,
     this.height = 48,
     this.width,
+    this.padding,
   });
 
   @override
@@ -78,9 +80,13 @@ class ZenButton extends StatelessWidget {
                 Icon(icon, size: 18, color: fg),
                 const SizedBox(width: 8),
               ],
-              Text(
-                label,
-                style: AppTextStyles.labelLarge(fg),
+              Flexible(
+                child: Text(
+                  label,
+                  style: AppTextStyles.labelLarge(fg),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
               ),
             ],
           );
@@ -98,7 +104,7 @@ class ZenButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(100),
             side: borderSide,
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: padding ?? const EdgeInsets.symmetric(horizontal: 16),
         ),
         child: content,
       ),

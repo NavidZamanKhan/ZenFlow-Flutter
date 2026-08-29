@@ -8,12 +8,7 @@ import 'features/showcase/views/theme_showcase_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(
-    BlocProvider(
-      create: (_) => ThemeBloc(),
-      child: const ZenFlowApp(),
-    ),
-  );
+  runApp(BlocProvider(create: (_) => ThemeBloc(), child: const ZenFlowApp()));
 }
 
 class ZenFlowApp extends StatelessWidget {

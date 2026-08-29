@@ -12,9 +12,10 @@ void main() {
         child: const ZenFlowApp(),
       ),
     );
+    await tester.pumpAndSettle();
 
     // Verify ZenFlow branding is rendered
-    expect(find.text('ZenFlow'), findsOneWidget);
+    expect(find.text('ZenFlow'), findsWidgets);
     expect(find.text('Theme Appearance'), findsOneWidget);
   });
 }

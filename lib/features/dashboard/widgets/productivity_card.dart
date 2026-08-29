@@ -4,13 +4,17 @@ import 'package:flutter_lucide/flutter_lucide.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/zenflow_theme.dart';
 import '../../../core/widgets/zen_card.dart';
+import '../models/focus_task.dart';
 
 class ProductivityCard extends StatelessWidget {
-  const ProductivityCard({super.key});
+  final List<FocusTask> tasks;
+  const ProductivityCard({super.key, required this.tasks});
 
   @override
   Widget build(BuildContext context) {
     final zen = context.zenColors;
+    final completed = tasks.where((task) => task.isComplete).length;
+    final score = tasks.isEmpty ? 0 : (completed / tasks.length * 100).round();
     return ZenCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -35,21 +39,23 @@ class ProductivityCard extends StatelessWidget {
               ),
               const SizedBox(width: 4),
               Text(
-                '+12%',
+                '$completed done',
                 style: AppTextStyles.labelMedium(Colors.green.shade600),
               ),
             ],
           ),
           const SizedBox(height: 7),
           Text(
-            'Your weekly rhythm is looking good.',
+            tasks.isEmpty
+                ? 'Add a task to start tracking your rhythm.'
+                : 'Completion across your current tasks.',
             style: AppTextStyles.bodySmall(zen.textMuted),
           ),
           const SizedBox(height: 12),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text('76%', style: AppTextStyles.statNumber(zen.textPrimary)),
+              Text('$score%', style: AppTextStyles.statNumber(zen.textPrimary)),
               const SizedBox(width: 8),
               Padding(
                 padding: const EdgeInsets.only(bottom: 5),

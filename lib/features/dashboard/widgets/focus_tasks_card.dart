@@ -38,7 +38,18 @@ class FocusTasksCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          ...tasks.map((task) => _FocusTaskTile(task: task)),
+          if (tasks.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 18),
+              child: Center(
+                child: Text(
+                  'Nothing on your list yet.',
+                  style: AppTextStyles.bodySmall(zen.textMuted),
+                ),
+              ),
+            )
+          else
+            ...tasks.take(5).map((task) => _FocusTaskTile(task: task)),
           const SizedBox(height: 8),
           TextButton.icon(
             onPressed: () {},
@@ -61,6 +72,23 @@ class _FocusTaskTile extends StatelessWidget {
   final FocusTask task;
 
   const _FocusTaskTile({required this.task});
+
+  String get _scheduleLabel {
+    if (task.dueDate == null) return 'No due date';
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final due = DateTime(
+      task.dueDate!.year,
+      task.dueDate!.month,
+      task.dueDate!.day,
+    );
+    final date = due == today
+        ? 'Today'
+        : due == today.add(const Duration(days: 1))
+        ? 'Tomorrow'
+        : '${due.day}/${due.month}';
+    return task.detail.isEmpty ? date : '$date · ${task.detail}';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -96,7 +124,7 @@ class _FocusTaskTile extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    task.detail,
+                    _scheduleLabel,
                     style: AppTextStyles.labelSmall(zen.textMuted),
                   ),
                 ],
@@ -110,7 +138,7 @@ class _FocusTaskTile extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
-                task.category,
+                task.category.isEmpty ? 'General' : task.category,
                 style: AppTextStyles.labelSmall(zen.textSecondary),
               ),
             ),

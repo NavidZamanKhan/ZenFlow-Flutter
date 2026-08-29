@@ -4,12 +4,21 @@ import 'package:flutter_lucide/flutter_lucide.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/zenflow_theme.dart';
 import '../../../core/widgets/zen_card.dart';
+import '../models/dashboard_budget.dart';
+import '../models/dashboard_event.dart';
+import '../models/dashboard_expense.dart';
 
 class RemindersCard extends StatelessWidget {
-  const RemindersCard({super.key});
+  final List<DashboardEventItem> events;
+  const RemindersCard({super.key, required this.events});
+
   @override
   Widget build(BuildContext context) {
     final zen = context.zenColors;
+    final upcoming = events
+        .where((event) => !event.start.isBefore(DateTime.now()))
+        .take(3)
+        .toList();
     return ZenCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -25,27 +34,39 @@ class RemindersCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-          const _ReminderRow(
-            title: 'Team stand-up',
-            time: '10:30 AM',
-            color: Color(0xFF8B5CF6),
-          ),
-          const SizedBox(height: 12),
-          const _ReminderRow(
-            title: 'Design review',
-            time: '2:00 PM',
-            color: Color(0xFFF97316),
-          ),
-          const SizedBox(height: 12),
-          _ReminderRow(
-            title: 'Weekly planning',
-            time: 'Tomorrow',
-            color: zen.accent,
-          ),
+          if (upcoming.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: Text(
+                'No upcoming events.',
+                style: AppTextStyles.bodySmall(zen.textMuted),
+              ),
+            )
+          else
+            ...upcoming.map(
+              (event) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _ReminderRow(
+                  title: event.title,
+                  time: _eventTime(event),
+                  color: zen.accent,
+                ),
+              ),
+            ),
         ],
       ),
     );
   }
+}
+
+String _eventTime(DashboardEventItem event) {
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final date = DateTime(event.start.year, event.start.month, event.start.day);
+  if (date != today) return '${event.start.day}/${event.start.month}';
+  if (event.isAllDay) return 'All day';
+  final hour = event.start.hour % 12 == 0 ? 12 : event.start.hour % 12;
+  return '$hour:${event.start.minute.toString().padLeft(2, '0')} ${event.start.hour >= 12 ? 'PM' : 'AM'}';
 }
 
 class _ReminderRow extends StatelessWidget {
@@ -78,10 +99,26 @@ class _ReminderRow extends StatelessWidget {
 }
 
 class ExpenseSnapshotCard extends StatelessWidget {
-  const ExpenseSnapshotCard({super.key});
+  final List<DashboardExpense> expenses;
+  final DashboardBudget budget;
+  const ExpenseSnapshotCard({
+    super.key,
+    required this.expenses,
+    required this.budget,
+  });
   @override
   Widget build(BuildContext context) {
     final zen = context.zenColors;
+    final now = DateTime.now();
+    final spent = expenses
+        .where(
+          (expense) =>
+              expense.date.year == now.year && expense.date.month == now.month,
+        )
+        .fold<double>(0, (sum, expense) => sum + expense.amount);
+    final progress = budget.monthlyTotal == 0
+        ? 0.0
+        : (spent / budget.monthlyTotal).clamp(0.0, 1.0);
     return ZenCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -99,17 +136,22 @@ class ExpenseSnapshotCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-          Text('৳ 24,788', style: AppTextStyles.statNumber(zen.textPrimary)),
+          Text(
+            _amount(spent, budget.currency),
+            style: AppTextStyles.statNumber(zen.textPrimary),
+          ),
           const SizedBox(height: 3),
           Text(
-            'of ৳ 40,000 monthly budget',
+            budget.monthlyTotal == 0
+                ? 'Set a monthly budget to track spending'
+                : 'of ${_amount(budget.monthlyTotal, budget.currency)} monthly budget',
             style: AppTextStyles.bodySmall(zen.textMuted),
           ),
           const SizedBox(height: 14),
           ClipRRect(
             borderRadius: BorderRadius.circular(20),
             child: LinearProgressIndicator(
-              value: .62,
+              value: progress,
               minHeight: 8,
               color: zen.accent,
               backgroundColor: zen.subtleFill,
@@ -117,7 +159,9 @@ class ExpenseSnapshotCard extends StatelessWidget {
           ),
           const SizedBox(height: 9),
           Text(
-            '৳ 15,212 left to spend',
+            budget.monthlyTotal == 0
+                ? '${expenses.length} expenses this month'
+                : '${_amount(budget.monthlyTotal - spent, budget.currency)} left to spend',
             style: AppTextStyles.labelMedium(zen.accent),
           ),
         ],
@@ -125,3 +169,6 @@ class ExpenseSnapshotCard extends StatelessWidget {
     );
   }
 }
+
+String _amount(double amount, String currency) =>
+    '${currency == 'BDT' ? '৳' : '$currency '}${amount.toStringAsFixed(0)}';

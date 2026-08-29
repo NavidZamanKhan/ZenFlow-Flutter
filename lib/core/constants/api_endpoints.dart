@@ -15,4 +15,10 @@ class ApiEndpoints {
   static const String setPassword = '/api/auth/password/set/';
   static const String passwordOtp = '/api/auth/password/otp/';
   static const String passwordReset = '/api/auth/password/reset/';
+
+  // Workspace endpoints
+  static const String tasks = '/api/tasks/';
+  static const String events = '/api/events/';
+  static const String expenses = '/api/expenses/';
+  static const String budget = '/api/budget/';
 }

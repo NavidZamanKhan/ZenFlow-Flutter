@@ -7,6 +7,10 @@ sealed class DashboardEvent extends Equatable {
   List<Object?> get props => [];
 }
 
+class DashboardLoadRequested extends DashboardEvent {
+  const DashboardLoadRequested();
+}
+
 class DashboardTabSelected extends DashboardEvent {
   final int index;
 

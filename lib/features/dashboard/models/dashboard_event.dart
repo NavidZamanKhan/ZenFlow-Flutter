@@ -13,15 +13,19 @@ class DashboardEventItem extends Equatable {
     required this.isAllDay,
   });
 
-  factory DashboardEventItem.fromJson(Map<String, dynamic> json) =>
-      DashboardEventItem(
-        id: json['id']?.toString() ?? '',
-        title: json['title']?.toString() ?? 'Untitled event',
-        start:
-            DateTime.tryParse(json['start_datetime']?.toString() ?? '') ??
-            DateTime.now(),
-        isAllDay: json['all_day'] == true,
-      );
+  factory DashboardEventItem.fromJson(Map<String, dynamic> json) {
+    final rawStart = json['start_datetime'] ?? json['startDatetime'] ?? json['start'];
+    final rawAllDay = json['all_day'] == true || json['allDay'] == true;
+
+    return DashboardEventItem(
+      id: json['id']?.toString() ?? '',
+      title: json['title']?.toString() ?? 'Untitled event',
+      start: rawStart != null
+          ? (DateTime.tryParse(rawStart.toString()) ?? DateTime.now())
+          : DateTime.now(),
+      isAllDay: rawAllDay,
+    );
+  }
 
   @override
   List<Object?> get props => [id, title, start, isAllDay];

@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:dio/dio.dart';
 
 import '../../../core/constants/api_endpoints.dart';
@@ -27,33 +26,71 @@ class DashboardRepository {
   final ApiClient _apiClient;
 
   DashboardRepository({ApiClient? apiClient})
-    : _apiClient = apiClient ?? ApiClient();
+      : _apiClient = apiClient ?? ApiClient();
 
+  /// Loads full dashboard data with resilient individual fallback handling
   Future<DashboardSnapshot> load() async {
+    // Fetch tasks, events, expenses, and budget in parallel with independent fault isolation
+    final tasksFuture = _fetchTasks();
+    final eventsFuture = _fetchEvents();
+    final expensesFuture = _fetchExpenses();
+    final budgetFuture = _fetchBudget();
+
+    final results = await Future.wait([
+      tasksFuture,
+      eventsFuture,
+      expensesFuture,
+      budgetFuture,
+    ]);
+
+    return DashboardSnapshot(
+      tasks: results[0] as List<FocusTask>,
+      events: results[1] as List<DashboardEventItem>,
+      expenses: results[2] as List<DashboardExpense>,
+      budget: results[3] as DashboardBudget,
+    );
+  }
+
+  Future<List<FocusTask>> _fetchTasks() async {
     try {
-      final results = await Future.wait([
-        _apiClient.dio.get(ApiEndpoints.tasks),
-        _apiClient.dio.get(ApiEndpoints.events),
-        _apiClient.dio.get(ApiEndpoints.expenses),
-        _apiClient.dio.get(ApiEndpoints.budget),
-      ]);
-      return DashboardSnapshot(
-        tasks: _records(results[0])
-            .map(FocusTask.fromJson)
-            .toList(growable: false),
-        events: _records(results[1])
-            .map(DashboardEventItem.fromJson)
-            .toList(growable: false),
-        expenses: _records(results[2])
-            .map(DashboardExpense.fromJson)
-            .toList(growable: false),
-        budget: DashboardBudget.fromJson(_map(results[3].data)),
-      );
-    } on DioException catch (error) {
-      throw Exception(_message(error, 'Could not load your dashboard.'));
+      final response = await _apiClient.dio.get(ApiEndpoints.tasks);
+      return _records(response).map(FocusTask.fromJson).toList(growable: false);
+    } catch (_) {
+      return const [];
     }
   }
 
+  Future<List<DashboardEventItem>> _fetchEvents() async {
+    try {
+      final response = await _apiClient.dio.get(ApiEndpoints.events);
+      return _records(response).map(DashboardEventItem.fromJson).toList(growable: false);
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<List<DashboardExpense>> _fetchExpenses() async {
+    try {
+      final response = await _apiClient.dio.get(ApiEndpoints.expenses);
+      return _records(response).map(DashboardExpense.fromJson).toList(growable: false);
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<DashboardBudget> _fetchBudget() async {
+    try {
+      final response = await _apiClient.dio.get(ApiEndpoints.budget);
+      if (response.data is Map) {
+        return DashboardBudget.fromJson(Map<String, dynamic>.from(response.data as Map));
+      }
+      return DashboardBudget.empty();
+    } catch (_) {
+      return DashboardBudget.empty();
+    }
+  }
+
+  /// Toggles task completion state with live Django backend sync
   Future<FocusTask> toggleTask(FocusTask task) async {
     try {
       final response = await _apiClient.dio.patch(

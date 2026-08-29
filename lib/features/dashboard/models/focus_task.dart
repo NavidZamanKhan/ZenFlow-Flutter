@@ -5,6 +5,7 @@ class FocusTask extends Equatable {
   final String title;
   final String detail;
   final String category;
+  final String priority;
   final DateTime? dueDate;
   final bool isComplete;
 
@@ -13,28 +14,50 @@ class FocusTask extends Equatable {
     required this.title,
     required this.detail,
     required this.category,
+    this.priority = 'medium',
     this.dueDate,
     this.isComplete = false,
   });
 
-  factory FocusTask.fromJson(Map<String, dynamic> json) => FocusTask(
-    id: json['id']?.toString() ?? '',
-    title: json['title']?.toString() ?? 'Untitled task',
-    detail: json['dueTime']?.toString() ?? '',
-    category: json['category']?.toString() ?? '',
-    dueDate: DateTime.tryParse(json['dueDate']?.toString() ?? ''),
-    isComplete: json['completed'] == true,
-  );
+  factory FocusTask.fromJson(Map<String, dynamic> json) {
+    // Robust parsing for camelCase and snake_case backend fields
+    final rawDueDate = json['dueDate'] ?? json['due_date'];
+    final rawDueTime = json['dueTime'] ?? json['due_time'];
+    final rawPriority = json['priority']?.toString() ?? 'medium';
+    final rawCategory = json['category']?.toString() ?? 'General';
+    final rawCompleted = json['completed'] == true || json['is_complete'] == true;
 
-  FocusTask copyWith({bool? isComplete}) => FocusTask(
-    id: id,
-    title: title,
-    detail: detail,
-    category: category,
-    dueDate: dueDate,
-    isComplete: isComplete ?? this.isComplete,
-  );
+    return FocusTask(
+      id: json['id']?.toString() ?? '',
+      title: json['title']?.toString() ?? 'Untitled task',
+      detail: rawDueTime?.toString() ?? '',
+      category: rawCategory,
+      priority: rawPriority,
+      dueDate: rawDueDate != null ? DateTime.tryParse(rawDueDate.toString()) : null,
+      isComplete: rawCompleted,
+    );
+  }
+
+  FocusTask copyWith({
+    String? id,
+    String? title,
+    String? detail,
+    String? category,
+    String? priority,
+    DateTime? dueDate,
+    bool? isComplete,
+  }) {
+    return FocusTask(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      detail: detail ?? this.detail,
+      category: category ?? this.category,
+      priority: priority ?? this.priority,
+      dueDate: dueDate ?? this.dueDate,
+      isComplete: isComplete ?? this.isComplete,
+    );
+  }
 
   @override
-  List<Object?> get props => [id, title, detail, category, dueDate, isComplete];
+  List<Object?> get props => [id, title, detail, category, priority, dueDate, isComplete];
 }

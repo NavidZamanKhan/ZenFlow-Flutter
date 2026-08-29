@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/zenflow_theme.dart';
 import '../../../core/widgets/zen_badge.dart';
 import '../../../core/widgets/zen_icon_button.dart';
+import '../../auth/bloc/auth_bloc.dart';
+import '../../auth/bloc/auth_event.dart';
 import '../../auth/models/user_model.dart';
+import '../../showcase/views/theme_showcase_screen.dart';
 
 class DashboardHeader extends StatelessWidget {
   final UserModel user;
@@ -31,6 +36,7 @@ class DashboardHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final zen = context.zenColors;
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -49,8 +55,7 @@ class DashboardHeader extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               ZenBadge(
-                label:
-                    '$remainingTasks ${remainingTasks == 1 ? 'task' : 'tasks'} to go',
+                label: '$remainingTasks ${remainingTasks == 1 ? 'task' : 'tasks'} to go',
                 color: zen.accent,
                 showDot: false,
                 icon: LucideIcons.list_todo,
@@ -59,7 +64,40 @@ class DashboardHeader extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 12),
-        ZenIconButton(icon: LucideIcons.bell, hasBadge: true, onTap: () {}),
+        Row(
+          children: [
+            // Theme / Component settings
+            ZenIconButton(
+              icon: LucideIcons.palette,
+              size: 40,
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const ThemeShowcaseScreen(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(width: 8),
+            // Notifications Bell
+            ZenIconButton(
+              icon: LucideIcons.bell,
+              hasBadge: true,
+              size: 40,
+              onTap: () {},
+            ),
+            const SizedBox(width: 8),
+            // Logout
+            ZenIconButton(
+              icon: LucideIcons.log_out,
+              iconColor: AppColors.danger,
+              size: 40,
+              onTap: () {
+                context.read<AuthBloc>().add(LogoutRequestedEvent());
+              },
+            ),
+          ],
+        ),
       ],
     );
   }

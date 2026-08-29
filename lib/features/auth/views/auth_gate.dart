@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/zenflow_theme.dart';
-import '../../showcase/views/theme_showcase_screen.dart';
+import '../../dashboard/views/dashboard_shell.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_state.dart';
 import 'auth_screen.dart';
@@ -18,10 +18,11 @@ class AuthGate extends StatelessWidget {
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, state) {
         if (state is AuthenticatedState) {
-          return const ThemeShowcaseScreen();
+          return const DashboardShell();
         }
 
-        if (state is AuthLoadingState && state.message == 'Checking session...') {
+        if (state is AuthLoadingState &&
+            state.message == 'Checking session...') {
           return Scaffold(
             backgroundColor: zen.canvas,
             body: Center(

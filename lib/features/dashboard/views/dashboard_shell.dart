@@ -1,0 +1,116 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
+
+import '../../../core/theme/app_text_styles.dart';
+import '../../../core/theme/zenflow_theme.dart';
+import '../bloc/dashboard_bloc.dart';
+import '../bloc/dashboard_event.dart';
+import '../bloc/dashboard_state.dart';
+import '../widgets/dashboard_placeholder.dart';
+import 'dashboard_overview_screen.dart';
+
+class DashboardShell extends StatelessWidget {
+  const DashboardShell({super.key});
+  @override
+  Widget build(BuildContext context) => BlocProvider(
+    create: (_) => DashboardBloc(),
+    child: const _DashboardShellBody(),
+  );
+}
+
+class _DashboardShellBody extends StatelessWidget {
+  const _DashboardShellBody();
+  static const _destinations = [
+    (label: 'Overview', icon: LucideIcons.layout_dashboard),
+    (label: 'Tasks', icon: LucideIcons.list_todo),
+    (label: 'Calendar', icon: LucideIcons.calendar_days),
+    (label: 'Expenses', icon: LucideIcons.credit_card),
+    (label: 'Insights', icon: LucideIcons.chart_no_axes_combined),
+  ];
+  @override
+  Widget build(BuildContext context) =>
+      BlocBuilder<DashboardBloc, DashboardState>(
+        builder: (context, state) => Scaffold(
+          body: _bodyFor(context, state),
+          bottomNavigationBar: _ZenBottomNavigation(
+            selectedIndex: state.selectedTab,
+          ),
+        ),
+      );
+
+  Widget _bodyFor(BuildContext context, DashboardState state) {
+    if (state.selectedTab == 0) return DashboardOverviewScreen(state: state);
+    final item = _destinations[state.selectedTab];
+    return DashboardPlaceholder(title: item.label, icon: item.icon);
+  }
+}
+
+class _ZenBottomNavigation extends StatelessWidget {
+  final int selectedIndex;
+  const _ZenBottomNavigation({required this.selectedIndex});
+  @override
+  Widget build(BuildContext context) {
+    final zen = context.zenColors;
+    return SafeArea(
+      top: false,
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 7),
+        decoration: BoxDecoration(
+          color: zen.card,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: zen.border),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: zen.isDark ? .22 : .07),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Row(
+          children: List.generate(_DashboardShellBody._destinations.length, (
+            index,
+          ) {
+            final item = _DashboardShellBody._destinations[index];
+            final isSelected = index == selectedIndex;
+            return Expanded(
+              child: InkWell(
+                onTap: () => context.read<DashboardBloc>().add(
+                  DashboardTabSelected(index),
+                ),
+                borderRadius: BorderRadius.circular(18),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isSelected ? zen.accentSoft : Colors.transparent,
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        item.icon,
+                        size: 19,
+                        color: isSelected ? zen.accent : zen.textMuted,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        item.label,
+                        style: AppTextStyles.labelSmall(
+                          isSelected ? zen.accent : zen.textMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }),
+        ),
+      ),
+    );
+  }
+}

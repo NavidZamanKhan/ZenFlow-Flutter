@@ -38,11 +38,17 @@ class AuthRepository {
         },
       );
 
-      return PendingRegistrationModel.fromJson(
+      final pending = PendingRegistrationModel.fromJson(
         json: response.data,
         email: email.trim().toLowerCase(),
         fullName: fullName.trim(),
       );
+
+      if (pending.pendingRegistrationId.isEmpty) {
+        throw Exception('An account with this email already exists. Please log in.');
+      }
+
+      return pending;
     } on DioException catch (e) {
       throw Exception(_extractErrorMessage(e, 'Registration failed. Please check your inputs.'));
     }

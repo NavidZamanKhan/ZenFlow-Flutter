@@ -11,6 +11,8 @@ import '../../calendar/bloc/calendar_bloc.dart';
 import '../../calendar/views/calendar_screen.dart';
 import '../../expenses/bloc/expenses_bloc.dart';
 import '../../expenses/views/expenses_screen.dart';
+import '../../insights/bloc/insights_bloc.dart';
+import '../../insights/views/insights_screen.dart';
 import '../../tasks/bloc/tasks_bloc.dart';
 import '../../tasks/views/tasks_screen.dart';
 import '../bloc/dashboard_bloc.dart';
@@ -31,6 +33,7 @@ class DashboardShell extends StatelessWidget {
       BlocProvider(create: (_) => TasksBloc()),
       BlocProvider(create: (_) => CalendarBloc()),
       BlocProvider(create: (_) => ExpensesBloc()),
+      BlocProvider(create: (_) => InsightsBloc()),
     ],
     child: const _DashboardShellBody(),
   );
@@ -66,6 +69,7 @@ class _DashboardShellBody extends StatelessWidget {
     if (state.selectedTab == 1) return const TasksScreen();
     if (state.selectedTab == 2) return const CalendarScreen();
     if (state.selectedTab == 3) return const ExpensesScreen();
+    if (state.selectedTab == 4) return const InsightsScreen();
     final item = _destinations[state.selectedTab];
     return DashboardPlaceholder(title: item.label, icon: item.icon);
   }

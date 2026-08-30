@@ -7,6 +7,8 @@ import 'core/theme/zenflow_theme.dart';
 import 'features/auth/bloc/auth_bloc.dart';
 import 'features/auth/bloc/auth_event.dart';
 import 'features/auth/views/auth_gate.dart';
+import 'features/profile/bloc/profile_bloc.dart';
+import 'features/profile/bloc/profile_event.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,6 +20,9 @@ void main() {
         ),
         BlocProvider(
           create: (_) => AuthBloc()..add(CheckAuthStatusEvent()),
+        ),
+        BlocProvider(
+          create: (_) => ProfileBloc()..add(const LoadProfileEvent()),
         ),
       ],
       child: const ZenFlowApp(),

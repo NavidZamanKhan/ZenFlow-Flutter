@@ -9,7 +9,6 @@ import '../../../core/widgets/zen_icon_button.dart';
 import '../../auth/models/user_model.dart';
 import '../../profile/bloc/profile_bloc.dart';
 import '../../profile/bloc/profile_state.dart';
-import '../../profile/views/settings_screen.dart';
 import '../../profile/widgets/user_menu_bottom_sheet.dart';
 
 class DashboardHeader extends StatelessWidget {
@@ -66,19 +65,6 @@ class DashboardHeader extends StatelessWidget {
         const SizedBox(width: 12),
         Row(
           children: [
-            // Settings button
-            ZenIconButton(
-              icon: LucideIcons.settings,
-              size: 40,
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const SettingsScreen(),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(width: 8),
             // Notifications Bell
             ZenIconButton(
               icon: LucideIcons.bell,

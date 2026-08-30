@@ -28,13 +28,18 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   ) {
     final updated = state.profile.copyWith(
       currency: event.currency,
+      dateFormat: event.dateFormat,
+      numberFormat: event.numberFormat,
+      firstDayOfWeek: event.firstDayOfWeek,
+      defaultPaymentMethod: event.defaultPaymentMethod,
+      defaultExpenseCategory: event.defaultExpenseCategory,
       is24HourTime: event.is24HourTime,
       displayDensity: event.displayDensity,
     );
     emit(state.copyWith(
       profile: updated,
       status: ProfileStatus.success,
-      message: 'Preferences saved',
+      message: 'Preferences saved successfully',
     ));
   }
 }

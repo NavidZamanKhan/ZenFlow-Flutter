@@ -24,15 +24,34 @@ class UpdateProfileEvent extends ProfileEvent {
 
 class UpdateExpensePreferencesEvent extends ProfileEvent {
   final String currency;
+  final String dateFormat;
+  final String numberFormat;
+  final String firstDayOfWeek;
+  final String defaultPaymentMethod;
+  final String defaultExpenseCategory;
   final bool is24HourTime;
   final String displayDensity;
 
   const UpdateExpensePreferencesEvent({
     required this.currency,
+    required this.dateFormat,
+    required this.numberFormat,
+    required this.firstDayOfWeek,
+    required this.defaultPaymentMethod,
+    required this.defaultExpenseCategory,
     required this.is24HourTime,
     required this.displayDensity,
   });
 
   @override
-  List<Object?> get props => [currency, is24HourTime, displayDensity];
+  List<Object?> get props => [
+        currency,
+        dateFormat,
+        numberFormat,
+        firstDayOfWeek,
+        defaultPaymentMethod,
+        defaultExpenseCategory,
+        is24HourTime,
+        displayDensity,
+      ];
 }

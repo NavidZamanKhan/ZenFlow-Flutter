@@ -43,6 +43,7 @@ class ExpensesScreen extends StatelessWidget {
                 color: zen.accent,
                 backgroundColor: zen.card,
                 onRefresh: () async {
+                  context.read<ExpensesBloc>().add(const FetchExpenses());
                   await Future.delayed(const Duration(milliseconds: 650));
                 },
                 child: ListView(

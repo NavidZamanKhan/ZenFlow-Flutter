@@ -58,6 +58,7 @@ class _TasksScreenState extends State<TasksScreen> {
                 color: zen.accent,
                 backgroundColor: zen.card,
                 onRefresh: () async {
+                  context.read<TasksBloc>().add(const LoadTasksEvent());
                   await Future.delayed(const Duration(milliseconds: 650));
                 },
                 child: ListView(

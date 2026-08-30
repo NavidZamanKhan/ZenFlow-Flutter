@@ -9,6 +9,10 @@ sealed class ExpensesEvent extends Equatable {
   List<Object?> get props => [];
 }
 
+class FetchExpenses extends ExpensesEvent {
+  const FetchExpenses();
+}
+
 class AddExpense extends ExpensesEvent {
   final ExpenseItem expense;
   const AddExpense(this.expense);

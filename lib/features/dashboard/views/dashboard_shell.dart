@@ -10,6 +10,7 @@ import '../../../core/theme/zenflow_theme.dart';
 import '../../calendar/bloc/calendar_bloc.dart';
 import '../../calendar/views/calendar_screen.dart';
 import '../../expenses/bloc/expenses_bloc.dart';
+import '../../expenses/bloc/expenses_event.dart';
 import '../../expenses/views/expenses_screen.dart';
 import '../../insights/bloc/insights_bloc.dart';
 import '../../insights/views/insights_screen.dart';
@@ -34,7 +35,9 @@ class DashboardShell extends StatelessWidget {
       ),
       BlocProvider(create: (_) => TasksBloc()),
       BlocProvider(create: (_) => CalendarBloc()),
-      BlocProvider(create: (_) => ExpensesBloc()),
+      BlocProvider(
+        create: (_) => ExpensesBloc()..add(const FetchExpenses()),
+      ),
       BlocProvider(create: (_) => InsightsBloc()),
       BlocProvider(create: (_) => ProfileBloc()..add(const LoadProfileEvent())),
     ],

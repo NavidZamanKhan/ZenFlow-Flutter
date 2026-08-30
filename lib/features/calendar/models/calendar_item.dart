@@ -42,6 +42,35 @@ class CalendarItem extends Equatable {
     return startTimeStr;
   }
 
+  factory CalendarItem.fromJson(Map<String, dynamic> json) {
+    final rawStart = json['start_datetime'] ?? json['startDateTime'];
+    final rawEnd = json['end_datetime'] ?? json['endDateTime'];
+
+    return CalendarItem(
+      id: json['id']?.toString() ?? '',
+      title: json['title'] ?? 'Untitled Event',
+      description: json['description'] ?? '',
+      startDateTime: rawStart != null
+          ? (DateTime.tryParse(rawStart.toString()) ?? DateTime.now())
+          : DateTime.now(),
+      endDateTime: rawEnd != null ? DateTime.tryParse(rawEnd.toString()) : null,
+      isAllDay: json['all_day'] ?? json['isAllDay'] ?? false,
+      type: CalendarItemType.event,
+      isCompleted: json['completed'] ?? false,
+      category: json['category'] ?? 'Event',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'title': title,
+      'description': description,
+      'start_datetime': startDateTime.toIso8601String(),
+      if (endDateTime != null) 'end_datetime': endDateTime!.toIso8601String(),
+      'all_day': isAllDay,
+    };
+  }
+
   CalendarItem copyWith({
     String? id,
     String? title,

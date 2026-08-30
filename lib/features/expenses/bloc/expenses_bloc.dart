@@ -1,129 +1,124 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../models/category_budget_item.dart';
-import '../models/expense_item.dart';
+import '../services/expenses_service.dart';
 import 'expenses_event.dart';
 import 'expenses_state.dart';
 
 class ExpensesBloc extends Bloc<ExpensesEvent, ExpensesState> {
-  ExpensesBloc() : super(_initialState()) {
-    on<AddExpense>(
-      (event, emit) =>
-          emit(state.copyWith(expenses: [event.expense, ...state.expenses])),
-    );
-    on<DeleteExpense>(
-      (event, emit) => emit(
-        state.copyWith(
-          expenses: state.expenses
-              .where((item) => item.id != event.expenseId)
-              .toList(),
-        ),
-      ),
-    );
+  final ExpensesService _service;
+
+  ExpensesBloc({ExpensesService? service})
+      : _service = service ?? ExpensesService(),
+        super(_initialState()) {
+    on<FetchExpenses>(_onFetchExpenses);
+    on<AddExpense>(_onAddExpense);
+    on<DeleteExpense>(_onDeleteExpense);
     on<SwitchSubTab>(
       (event, emit) => emit(state.copyWith(subTab: event.subTab)),
     );
     on<FilterExpenses>(
       (event, emit) => emit(state.copyWith(selectedCategory: event.category)),
     );
-    on<UpdateBudget>(_updateBudget);
+    on<UpdateBudget>(_onUpdateBudget);
   }
 
-  void _updateBudget(UpdateBudget event, Emitter<ExpensesState> emit) => emit(
-    state.copyWith(
-      budgets: state.budgets
-          .map(
-            (item) => item.category == event.category
-                ? item.copyWith(budgetAmount: event.amount)
-                : item,
-          )
-          .toList(),
-    ),
-  );
+  Future<void> _onFetchExpenses(
+    FetchExpenses event,
+    Emitter<ExpensesState> emit,
+  ) async {
+    try {
+      final expenses = await _service.getExpenses();
+      final budgets = await _service.getBudget(expenses);
+      emit(state.copyWith(
+        expenses: expenses,
+        budgets: budgets.isNotEmpty ? budgets : state.budgets,
+      ));
+    } catch (_) {
+      // Keep existing state if offline or token pending
+    }
+  }
 
-  static ExpensesState _initialState() => ExpensesState(
-    budgets: const [
-      CategoryBudgetItem(
-        category: 'Bills',
-        budgetAmount: 20000,
-        spentAmount: 16200,
-      ),
-      CategoryBudgetItem(
-        category: 'Shopping',
-        budgetAmount: 5000,
-        spentAmount: 2500,
-      ),
-      CategoryBudgetItem(category: 'Food', budgetAmount: 10000, spentAmount: 0),
-      CategoryBudgetItem(
-        category: 'Transportation',
-        budgetAmount: 2000,
-        spentAmount: 0,
-      ),
-      CategoryBudgetItem(
-        category: 'Entertainment',
-        budgetAmount: 3000,
-        spentAmount: 0,
-      ),
-    ],
-    expenses: [
-      _expense('1', 'Rent', 15000, 'Bills', 8, 'Card', recurring: true),
-      _expense(
-        '2',
-        'University fees',
-        4500,
-        'Education',
-        8,
-        'Card',
-        recurring: true,
-      ),
-      _expense('3', 'Have to buy a mouse', 2500, 'Shopping', 27, 'Cash'),
-      _expense(
-        '4',
-        'Netflix',
-        1200,
-        'Subscription',
-        8,
-        'Card',
-        recurring: true,
-      ),
-      _expense(
-        '5',
-        'Internet bill',
-        1200,
-        'Bills',
-        10,
-        'Mobile Wallet',
-        recurring: true,
-      ),
-      _expense('6', 'Spotify', 219, 'Subscription', 5, 'Card', recurring: true),
-      _expense(
-        '7',
-        'YouTube',
-        169,
-        'Subscription',
-        10,
-        'Card',
-        recurring: true,
-      ),
-    ],
-  );
+  Future<void> _onAddExpense(
+    AddExpense event,
+    Emitter<ExpensesState> emit,
+  ) async {
+    // Optimistic insert
+    final previousExpenses = state.expenses;
+    emit(state.copyWith(expenses: [event.expense, ...state.expenses]));
 
-  static ExpenseItem _expense(
-    String id,
-    String title,
-    double amount,
-    String category,
-    int day,
-    String method, {
-    bool recurring = false,
-  }) => ExpenseItem(
-    id: id,
-    title: title,
-    amount: amount,
-    category: category,
-    date: DateTime(2026, 8, day),
-    paymentMethod: method,
-    isRecurring: recurring,
-    recurringInterval: recurring ? 'monthly' : null,
-  );
+    try {
+      final created = await _service.createExpense(event.expense);
+      // Replace dummy with server created
+      final updatedList = state.expenses
+          .map((e) => e.id == event.expense.id ? created : e)
+          .toList();
+      final updatedBudgets = await _service.getBudget(updatedList);
+      emit(state.copyWith(
+        expenses: updatedList,
+        budgets: updatedBudgets.isNotEmpty ? updatedBudgets : state.budgets,
+      ));
+    } catch (_) {
+      // Rollback on network failure
+      emit(state.copyWith(expenses: previousExpenses));
+    }
+  }
+
+  Future<void> _onDeleteExpense(
+    DeleteExpense event,
+    Emitter<ExpensesState> emit,
+  ) async {
+    final previousExpenses = state.expenses;
+    emit(state.copyWith(
+      expenses:
+          state.expenses.where((item) => item.id != event.expenseId).toList(),
+    ));
+
+    try {
+      await _service.deleteExpense(event.expenseId);
+      final updatedBudgets = await _service.getBudget(state.expenses);
+      emit(state.copyWith(
+        budgets: updatedBudgets.isNotEmpty ? updatedBudgets : state.budgets,
+      ));
+    } catch (_) {
+      // Rollback on failure
+      emit(state.copyWith(expenses: previousExpenses));
+    }
+  }
+
+  Future<void> _onUpdateBudget(
+    UpdateBudget event,
+    Emitter<ExpensesState> emit,
+  ) async {
+    final updatedBudgets = state.budgets
+        .map(
+          (item) => item.category == event.category
+              ? item.copyWith(budgetAmount: event.amount)
+              : item,
+        )
+        .toList();
+
+    emit(state.copyWith(budgets: updatedBudgets));
+
+    try {
+      await _service.updateCategoryBudget(
+        category: event.category,
+        newAmount: event.amount,
+        currentBudgets: updatedBudgets,
+      );
+    } catch (_) {
+      // Keep optimistic UI
+    }
+  }
+
+  static ExpensesState _initialState() => const ExpensesState(
+        budgets: [
+          CategoryBudgetItem(category: 'Bills', budgetAmount: 20000, spentAmount: 16200),
+          CategoryBudgetItem(category: 'Shopping', budgetAmount: 5000, spentAmount: 2500),
+          CategoryBudgetItem(category: 'Food', budgetAmount: 10000, spentAmount: 0),
+          CategoryBudgetItem(category: 'Transportation', budgetAmount: 2000, spentAmount: 0),
+          CategoryBudgetItem(category: 'Entertainment', budgetAmount: 3000, spentAmount: 0),
+        ],
+        expenses: [],
+      );
 }

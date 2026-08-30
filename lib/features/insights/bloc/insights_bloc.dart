@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
+import 'package:intl/intl.dart';
 
+import '../../../core/theme/app_colors.dart';
+import '../../expenses/services/expenses_service.dart';
 import '../models/chart_segment.dart';
 import '../models/daily_spending_point.dart';
 import '../models/smart_trend_item.dart';
@@ -9,156 +12,210 @@ import 'insights_event.dart';
 import 'insights_state.dart';
 
 class InsightsBloc extends Bloc<InsightsEvent, InsightsState> {
-  InsightsBloc() : super(InsightsState.initial()) {
+  final ExpensesService _expensesService;
+
+  InsightsBloc({ExpensesService? expensesService})
+      : _expensesService = expensesService ?? ExpensesService(),
+        super(InsightsState.initial()) {
     on<LoadInsightsEvent>(_onLoad);
     on<RefreshInsightsEvent>(_onRefresh);
 
     add(const LoadInsightsEvent());
   }
 
-  void _onLoad(LoadInsightsEvent event, Emitter<InsightsState> emit) {
+  Future<void> _onLoad(
+    LoadInsightsEvent event,
+    Emitter<InsightsState> emit,
+  ) async {
     emit(state.copyWith(status: InsightsStatus.loading));
-
-    final categorySegments = [
-      const ChartSegment(
-        label: 'Bills',
-        amount: 16200.00,
-        percentage: 79.9,
-        color: Color(0xFF8B5CF6), // Violet
-      ),
-      const ChartSegment(
-        label: 'Shopping',
-        amount: 2500.00,
-        percentage: 12.3,
-        color: Color(0xFFEC4899), // Pink
-      ),
-      const ChartSegment(
-        label: 'Subscription',
-        amount: 1588.00,
-        percentage: 7.8,
-        color: Color(0xFF06B6D4), // Cyan
-      ),
-    ];
-
-    final paymentSegments = [
-      const ChartSegment(
-        label: 'Card',
-        amount: 16588.00,
-        percentage: 81.8,
-        color: Color(0xFF3B82F6), // Blue
-      ),
-      const ChartSegment(
-        label: 'Cash',
-        amount: 2500.00,
-        percentage: 12.3,
-        color: Color(0xFF06B6D4), // Cyan
-      ),
-      const ChartSegment(
-        label: 'Mobile Wallet',
-        amount: 1200.00,
-        percentage: 5.8,
-        color: Color(0xFF10B981), // Emerald
-      ),
-    ];
-
-    // Generate 31 points with real peaks from transactions
-    final dailyPoints = List.generate(31, (index) {
-      final day = index + 1;
-      double amount = 0;
-      if (day == 5) amount = 15219;
-      if (day == 8) amount = 1200;
-      if (day == 10) amount = 1369;
-      if (day == 27) amount = 2500;
-      return DailySpendingPoint(day: day, amount: amount);
-    });
-
-    final weeklyAmounts = [0.0, 0.0, 0.0, 20288.0, 0.0, 0.0, 0.0];
-
-    final smartAnalytics = [
-      const SmartTrendItem(
-        title: 'Highest category',
-        value: 'Bills (৳16,200.00)',
-        subtitle: 'Bills is your highest spending category.',
-        icon: LucideIcons.trending_up,
-        accentColor: Color(0xFF8B5CF6),
-      ),
-      const SmartTrendItem(
-        title: 'Lowest category',
-        value: 'Subscription (৳1,588.00)',
-        subtitle: 'Subscription is your lowest active category.',
-        icon: LucideIcons.trending_down,
-        accentColor: Color(0xFF06B6D4),
-      ),
-      const SmartTrendItem(
-        title: 'Daily average',
-        value: '৳5,072.00 / day',
-        subtitle: 'Average spending per active spending day.',
-        icon: LucideIcons.sparkles,
-        accentColor: Color(0xFF10B981),
-      ),
-      const SmartTrendItem(
-        title: 'Recorded transactions',
-        value: '6 transactions',
-        subtitle: '6 transactions were recorded this month.',
-        icon: LucideIcons.receipt,
-        accentColor: Color(0xFF3B82F6),
-      ),
-    ];
-
-    final trendItems = [
-      const SmartTrendItem(
-        title: 'Biggest category increase',
-        value: 'Bills',
-        subtitle: '৳16,200.00 more than last month',
-        icon: LucideIcons.arrow_up_right,
-        accentColor: Color(0xFF8B5CF6),
-      ),
-      const SmartTrendItem(
-        title: 'Most active spending day',
-        value: '08/05/2026',
-        subtitle: '2 transactions recorded',
-        icon: LucideIcons.calendar,
-        accentColor: Color(0xFF3B82F6),
-      ),
-      const SmartTrendItem(
-        title: 'Most expensive day',
-        value: '08/05/2026',
-        subtitle: '৳15,219.00 total spent',
-        icon: LucideIcons.credit_card,
-        accentColor: Color(0xFFEF4444),
-      ),
-      const SmartTrendItem(
-        title: 'Largest single expense',
-        value: 'Rent',
-        subtitle: '৳15,000.00 on 08/05/2026',
-        icon: LucideIcons.wallet,
-        accentColor: Color(0xFFEC4899),
-      ),
-      const SmartTrendItem(
-        title: 'Average transaction value',
-        value: '৳3,381.33',
-        subtitle: 'Across 6 transactions',
-        icon: LucideIcons.chart_pie,
-        accentColor: Color(0xFF06B6D4),
-      ),
-    ];
-
-    emit(state.copyWith(
-      totalSpending: 20288.00,
-      spentThisMonth: 20288.00,
-      dailyAverage: 5072.00,
-      totalTransactions: 6,
-      categorySegments: categorySegments,
-      paymentSegments: paymentSegments,
-      dailyPoints: dailyPoints,
-      weeklyAmounts: weeklyAmounts,
-      smartAnalytics: smartAnalytics,
-      trendItems: trendItems,
-      status: InsightsStatus.success,
-    ));
+    await _computeAndEmitInsights(emit);
   }
 
-  void _onRefresh(RefreshInsightsEvent event, Emitter<InsightsState> emit) {
-    add(const LoadInsightsEvent());
+  Future<void> _onRefresh(
+    RefreshInsightsEvent event,
+    Emitter<InsightsState> emit,
+  ) async {
+    await _computeAndEmitInsights(emit);
+  }
+
+  Future<void> _computeAndEmitInsights(Emitter<InsightsState> emit) async {
+    try {
+      final expenses = await _expensesService.getExpenses();
+      final budgets = await _expensesService.getBudget(expenses);
+
+      if (expenses.isEmpty) {
+        emit(state.copyWith(status: InsightsStatus.success));
+        return;
+      }
+
+      // 1. Category Segments
+      final categoryTotals = <String, double>{};
+      double totalSpent = 0.0;
+
+      for (final exp in expenses) {
+        categoryTotals[exp.category] =
+            (categoryTotals[exp.category] ?? 0.0) + exp.amount;
+        totalSpent += exp.amount;
+      }
+
+      final categorySegments = categoryTotals.entries.map((e) {
+        final pct = totalSpent > 0 ? (e.value / totalSpent) * 100 : 0.0;
+        return ChartSegment(
+          label: e.key,
+          amount: e.value,
+          percentage: pct,
+          color: _colorForCategory(e.key),
+        );
+      }).toList()
+        ..sort((a, b) => b.amount.compareTo(a.amount));
+
+      // 2. Payment Method Segments
+      final paymentTotals = <String, double>{};
+      for (final exp in expenses) {
+        paymentTotals[exp.paymentMethod] =
+            (paymentTotals[exp.paymentMethod] ?? 0.0) + exp.amount;
+      }
+
+      final paymentSegments = paymentTotals.entries.map((e) {
+        final pct = totalSpent > 0 ? (e.value / totalSpent) * 100 : 0.0;
+        return ChartSegment(
+          label: e.key,
+          amount: e.value,
+          percentage: pct,
+          color: _colorForPayment(e.key),
+        );
+      }).toList()
+        ..sort((a, b) => b.amount.compareTo(a.amount));
+
+      // 3. Daily Spending Points (Sorted by day)
+      final dailyMap = <int, double>{};
+      for (final exp in expenses) {
+        dailyMap[exp.date.day] = (dailyMap[exp.date.day] ?? 0.0) + exp.amount;
+      }
+
+      final sortedDays = dailyMap.keys.toList()..sort();
+      final dailyPoints = sortedDays.map((day) {
+        return DailySpendingPoint(
+          day: day,
+          amount: dailyMap[day] ?? 0.0,
+        );
+      }).toList();
+
+      // 4. Weekly Spending Breakdown (Mon..Sun amounts)
+      final weeklyAmounts = <double>[0, 0, 0, 0, 0, 0, 0];
+      for (final exp in expenses) {
+        final dayOfWeek = (exp.date.weekday - 1).clamp(0, 6);
+        weeklyAmounts[dayOfWeek] += exp.amount;
+      }
+
+      // 5. Total Budget & Remaining
+      double totalBudget = 0.0;
+      for (final b in budgets) {
+        totalBudget += b.budgetAmount;
+      }
+      if (totalBudget == 0) totalBudget = 40000.0;
+
+      final remaining = (totalBudget - totalSpent).clamp(0.0, double.infinity);
+      final budgetUtilization =
+          totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0.0;
+      final dailyAverage = totalSpent / (DateTime.now().day.clamp(1, 31));
+
+      // 6. Smart Analytics & Trends
+      final topCategory = categorySegments.isNotEmpty
+          ? categorySegments.first.label
+          : 'Bills';
+      final topCategoryPct = categorySegments.isNotEmpty
+          ? categorySegments.first.percentage.toStringAsFixed(1)
+          : '0.0';
+
+      final smartAnalytics = [
+        SmartTrendItem(
+          title: 'Budget Health',
+          value: '${budgetUtilization.toStringAsFixed(1)}%',
+          subtitle: 'of total monthly limit used.',
+          icon: LucideIcons.trending_down,
+          accentColor: AppColors.success,
+        ),
+        SmartTrendItem(
+          title: 'Top Category',
+          value: topCategory,
+          subtitle: '$topCategoryPct% of all transactions.',
+          icon: LucideIcons.circle_alert,
+          accentColor: AppColors.warning,
+        ),
+      ];
+
+      final trendItems = [
+        SmartTrendItem(
+          title: 'Preferred Payment',
+          value: paymentSegments.isNotEmpty
+              ? paymentSegments.first.label
+              : 'Card',
+          subtitle: 'Primary payment method used.',
+          icon: LucideIcons.credit_card,
+          accentColor: AppColors.info,
+        ),
+        SmartTrendItem(
+          title: 'Savings Potential',
+          value: '৳${NumberFormat('#,##0').format(remaining)}',
+          subtitle: 'Unspent budget this month.',
+          icon: LucideIcons.sparkles,
+          accentColor: const Color(0xFF8B5CF6),
+        ),
+      ];
+
+      emit(state.copyWith(
+        totalSpending: totalSpent,
+        spentThisMonth: totalSpent,
+        dailyAverage: dailyAverage,
+        totalTransactions: expenses.length,
+        categorySegments: categorySegments,
+        paymentSegments: paymentSegments,
+        dailyPoints: dailyPoints.isNotEmpty ? dailyPoints : state.dailyPoints,
+        weeklyAmounts: weeklyAmounts,
+        smartAnalytics: smartAnalytics,
+        trendItems: trendItems,
+        status: InsightsStatus.success,
+      ));
+    } catch (_) {
+      emit(state.copyWith(status: InsightsStatus.success));
+    }
+  }
+
+  Color _colorForCategory(String cat) {
+    switch (cat.toLowerCase()) {
+      case 'bills':
+        return AppColors.categoryBills;
+      case 'shopping':
+        return AppColors.categoryShopping;
+      case 'subscription':
+        return AppColors.categorySubscription;
+      case 'education':
+        return AppColors.categoryEducation;
+      case 'food':
+        return AppColors.categoryFood;
+      case 'transportation':
+        return AppColors.categoryTransportation;
+      case 'healthcare':
+        return AppColors.categoryHealthcare;
+      case 'travel':
+        return AppColors.categoryTravel;
+      default:
+        return AppColors.categoryOthers;
+    }
+  }
+
+  Color _colorForPayment(String method) {
+    switch (method.toLowerCase()) {
+      case 'card':
+        return const Color(0xFF3B82F6);
+      case 'cash':
+        return const Color(0xFF10B981);
+      case 'mobile wallet':
+      case 'mobile':
+        return const Color(0xFFF59E0B);
+      default:
+        return const Color(0xFF8B5CF6);
+    }
   }
 }

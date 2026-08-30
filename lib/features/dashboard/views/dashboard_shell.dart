@@ -7,6 +7,8 @@ import 'package:flutter_lucide/flutter_lucide.dart';
 
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/zenflow_theme.dart';
+import '../../calendar/bloc/calendar_bloc.dart';
+import '../../calendar/views/calendar_screen.dart';
 import '../../tasks/bloc/tasks_bloc.dart';
 import '../../tasks/views/tasks_screen.dart';
 import '../bloc/dashboard_bloc.dart';
@@ -26,6 +28,9 @@ class DashboardShell extends StatelessWidget {
       ),
       BlocProvider(
         create: (_) => TasksBloc(),
+      ),
+      BlocProvider(
+        create: (_) => CalendarBloc(),
       ),
     ],
     child: const _DashboardShellBody(),
@@ -60,6 +65,7 @@ class _DashboardShellBody extends StatelessWidget {
   Widget _bodyFor(BuildContext context, DashboardState state) {
     if (state.selectedTab == 0) return DashboardOverviewScreen(state: state);
     if (state.selectedTab == 1) return const TasksScreen();
+    if (state.selectedTab == 2) return const CalendarScreen();
     final item = _destinations[state.selectedTab];
     return DashboardPlaceholder(title: item.label, icon: item.icon);
   }

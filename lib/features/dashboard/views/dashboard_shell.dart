@@ -45,10 +45,14 @@ class _DashboardShellBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) =>
       BlocBuilder<DashboardBloc, DashboardState>(
-        builder: (context, state) => Scaffold(
-          body: _bodyFor(context, state),
-          bottomNavigationBar: _ZenBottomNavigation(
-            selectedIndex: state.selectedTab,
+        builder: (context, state) => GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: Scaffold(
+            body: _bodyFor(context, state),
+            bottomNavigationBar: _ZenBottomNavigation(
+              selectedIndex: state.selectedTab,
+            ),
           ),
         ),
       );

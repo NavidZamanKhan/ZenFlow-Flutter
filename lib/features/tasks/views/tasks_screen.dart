@@ -44,18 +44,22 @@ class _TasksScreenState extends State<TasksScreen> {
   Widget build(BuildContext context) {
     final zen = context.zenColors;
 
-    return ColoredBox(
-      color: zen.canvas,
-      child: SafeArea(
-        child: BlocBuilder<TasksBloc, TasksState>(
-          builder: (context, state) {
-            final tasks = state.filteredTasks;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: ColoredBox(
+        color: zen.canvas,
+        child: SafeArea(
+          child: BlocBuilder<TasksBloc, TasksState>(
+            builder: (context, state) {
+              final tasks = state.filteredTasks;
 
-            return ListView(
-              physics: const AlwaysScrollableScrollPhysics(
-                parent: BouncingScrollPhysics(),
-              ),
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 118),
+              return ListView(
+                keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                physics: const AlwaysScrollableScrollPhysics(
+                  parent: BouncingScrollPhysics(),
+                ),
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 118),
               children: [
                 // Top Header (Title + Count + New Task button)
                 TasksHeader(
@@ -174,6 +178,7 @@ class _TasksScreenState extends State<TasksScreen> {
           },
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

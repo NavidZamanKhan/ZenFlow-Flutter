@@ -16,10 +16,15 @@ class UserMenuBottomSheet extends StatelessWidget {
   const UserMenuBottomSheet({super.key});
 
   static Future<void> show(BuildContext context) {
+    final profileBloc = context.read<ProfileBloc>();
+
     return showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (_) => const UserMenuBottomSheet(),
+      builder: (_) => BlocProvider.value(
+        value: profileBloc,
+        child: const UserMenuBottomSheet(),
+      ),
     );
   }
 

@@ -13,6 +13,8 @@ import '../../expenses/bloc/expenses_bloc.dart';
 import '../../expenses/views/expenses_screen.dart';
 import '../../insights/bloc/insights_bloc.dart';
 import '../../insights/views/insights_screen.dart';
+import '../../profile/bloc/profile_bloc.dart';
+import '../../profile/bloc/profile_event.dart';
 import '../../tasks/bloc/tasks_bloc.dart';
 import '../../tasks/views/tasks_screen.dart';
 import '../bloc/dashboard_bloc.dart';
@@ -34,6 +36,7 @@ class DashboardShell extends StatelessWidget {
       BlocProvider(create: (_) => CalendarBloc()),
       BlocProvider(create: (_) => ExpensesBloc()),
       BlocProvider(create: (_) => InsightsBloc()),
+      BlocProvider(create: (_) => ProfileBloc()..add(const LoadProfileEvent())),
     ],
     child: const _DashboardShellBody(),
   );

@@ -22,29 +22,18 @@ class ExpensesSubtabSwitcher extends StatelessWidget {
     final isAllExpenses = selected == ExpensesSubTab.allExpenses;
 
     return Container(
-      height: 48,
-      padding: const EdgeInsets.all(4),
+      height: 46,
+      padding: const EdgeInsets.all(3.5),
       decoration: BoxDecoration(
-        color: zen.card,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: zen.isDark ? zen.border : zen.border.withValues(alpha: 0.9),
-          width: 1.2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: zen.isDark ? 0.28 : 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: zen.isDark ? zen.surface : const Color(0xFFE2E8F0),
+        borderRadius: BorderRadius.circular(14),
       ),
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // Animated Glowing Sliding Pill Indicator
+          // Animated Solid Crisp Active Pill (Apple / Linear Style)
           AnimatedAlign(
-            duration: const Duration(milliseconds: 280),
+            duration: const Duration(milliseconds: 250),
             curve: Curves.easeOutCubic,
             alignment: isAllExpenses
                 ? Alignment.centerLeft
@@ -54,22 +43,14 @@ class ExpensesSubtabSwitcher extends StatelessWidget {
               heightFactor: 1.0,
               child: Container(
                 decoration: BoxDecoration(
-                  color: zen.isDark
-                      ? zen.accent.withValues(alpha: 0.22)
-                      : zen.accent.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: zen.accent.withValues(
-                      alpha: zen.isDark ? 0.45 : 0.35,
-                    ),
-                    width: 1.2,
-                  ),
+                  color: zen.isDark ? zen.card : Colors.white,
+                  borderRadius: BorderRadius.circular(11),
                   boxShadow: [
                     BoxShadow(
-                      color: zen.accent.withValues(
-                        alpha: zen.isDark ? 0.20 : 0.14,
+                      color: Colors.black.withValues(
+                        alpha: zen.isDark ? 0.35 : 0.08,
                       ),
-                      blurRadius: 10,
+                      blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
                   ],
@@ -133,34 +114,34 @@ class _TabItem extends StatelessWidget {
     return Expanded(
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(11),
         child: Center(
           child: AnimatedScale(
-            duration: const Duration(milliseconds: 200),
+            duration: const Duration(milliseconds: 180),
             curve: Curves.easeOutBack,
-            scale: isSelected ? 1.0 : 0.95,
+            scale: isSelected ? 1.0 : 0.96,
             child: Row(
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 150),
+                  duration: const Duration(milliseconds: 140),
                   child: Icon(
                     icon,
                     key: ValueKey(isSelected),
-                    size: 16,
+                    size: 15,
                     color: isSelected ? zen.accent : zen.textSecondary,
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 7),
                 AnimatedDefaultTextStyle(
-                  duration: const Duration(milliseconds: 150),
+                  duration: const Duration(milliseconds: 140),
                   style: AppTextStyles.labelMedium(
-                    isSelected ? zen.accent : zen.textSecondary,
+                    isSelected ? zen.textPrimary : zen.textSecondary,
                   ).copyWith(
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                    fontSize: 13.5,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    fontSize: 13,
                     height: 1.0,
                   ),
                   child: Text(label),

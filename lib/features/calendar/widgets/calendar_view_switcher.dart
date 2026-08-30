@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/zenflow_theme.dart';
@@ -16,9 +17,9 @@ class CalendarViewSwitcher extends StatelessWidget {
   });
 
   static const _modes = [
-    (mode: CalendarViewMode.month, label: 'Month'),
-    (mode: CalendarViewMode.week, label: 'Week'),
-    (mode: CalendarViewMode.schedule, label: 'Schedule'),
+    (mode: CalendarViewMode.month, label: 'Month', icon: LucideIcons.calendar),
+    (mode: CalendarViewMode.week, label: 'Week', icon: LucideIcons.calendar_days),
+    (mode: CalendarViewMode.schedule, label: 'Schedule', icon: LucideIcons.calendar_clock),
   ];
 
   int get _selectedIndex =>
@@ -30,18 +31,18 @@ class CalendarViewSwitcher extends StatelessWidget {
     final selectedIndex = _selectedIndex.clamp(0, _modes.length - 1);
 
     return Container(
-      height: 44,
-      padding: const EdgeInsets.all(4),
+      height: 46,
+      padding: const EdgeInsets.all(3.5),
       decoration: BoxDecoration(
-        color: zen.subtleFill,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: zen.border),
+        color: zen.isDark ? zen.surface : const Color(0xFFE2E8F0),
+        borderRadius: BorderRadius.circular(14),
       ),
       child: Stack(
+        alignment: Alignment.center,
         children: [
-          // Animated Glowing Sliding Indicator
+          // Animated Solid Crisp Active Pill (Apple / Linear Style)
           AnimatedAlign(
-            duration: const Duration(milliseconds: 380),
+            duration: const Duration(milliseconds: 250),
             curve: Curves.easeOutCubic,
             alignment: Alignment(
               -1 + (2 * selectedIndex / (_modes.length - 1)),
@@ -49,22 +50,19 @@ class CalendarViewSwitcher extends StatelessWidget {
             ),
             child: FractionallySizedBox(
               widthFactor: 1 / _modes.length,
-              heightFactor: 1,
+              heightFactor: 1.0,
               child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 2),
+                margin: const EdgeInsets.symmetric(horizontal: 1),
                 decoration: BoxDecoration(
-                  color: zen.isDark
-                      ? zen.accent.withValues(alpha: .22)
-                      : zen.accentSoft,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: zen.accent.withValues(alpha: .26),
-                  ),
+                  color: zen.isDark ? zen.card : Colors.white,
+                  borderRadius: BorderRadius.circular(11),
                   boxShadow: [
                     BoxShadow(
-                      color: zen.accent.withValues(alpha: .14),
-                      blurRadius: 10,
-                      offset: const Offset(0, 3),
+                      color: Colors.black.withValues(
+                        alpha: zen.isDark ? 0.35 : 0.08,
+                      ),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
                     ),
                   ],
                 ),
@@ -73,38 +71,64 @@ class CalendarViewSwitcher extends StatelessWidget {
           ),
 
           // Options Row
-          Row(
-            children: List.generate(_modes.length, (index) {
-              final item = _modes[index];
-              final isSelected = index == selectedIndex;
+          Positioned.fill(
+            child: Row(
+              children: List.generate(_modes.length, (index) {
+                final item = _modes[index];
+                final isSelected = index == selectedIndex;
 
-              return Expanded(
-                child: InkWell(
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    onModeChanged(item.mode);
-                  },
-                  borderRadius: BorderRadius.circular(12),
-                  splashColor: Colors.transparent,
-                  highlightColor: Colors.transparent,
-                  child: AnimatedScale(
-                    duration: const Duration(milliseconds: 240),
-                    curve: Curves.easeOutBack,
-                    scale: isSelected ? 1.0 : 0.94,
+                return Expanded(
+                  child: InkWell(
+                    onTap: () {
+                      if (!isSelected) {
+                        HapticFeedback.selectionClick();
+                        onModeChanged(item.mode);
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(11),
                     child: Center(
-                      child: Text(
-                        item.label,
-                        style: AppTextStyles.labelMedium(
-                          isSelected ? zen.accent : zen.textSecondary,
-                        ).copyWith(
-                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      child: AnimatedScale(
+                        duration: const Duration(milliseconds: 180),
+                        curve: Curves.easeOutBack,
+                        scale: isSelected ? 1.0 : 0.96,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 140),
+                              child: Icon(
+                                item.icon,
+                                key: ValueKey(isSelected),
+                                size: 15,
+                                color: isSelected
+                                    ? zen.accent
+                                    : zen.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            AnimatedDefaultTextStyle(
+                              duration: const Duration(milliseconds: 140),
+                              style: AppTextStyles.labelMedium(
+                                isSelected ? zen.textPrimary : zen.textSecondary,
+                              ).copyWith(
+                                fontWeight: isSelected
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                                fontSize: 13,
+                                height: 1.0,
+                              ),
+                              child: Text(item.label),
+                            ),
+                          ],
                         ),
                       ),
                     ),
                   ),
-                ),
-              );
-            }),
+                );
+              }),
+            ),
           ),
         ],
       ),

@@ -10,36 +10,9 @@ class InsightsHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final zen = context.zenColors;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Clarity on where your money flows',
-              style: AppTextStyles.bodySmall(zen.textSecondary),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: zen.isDark ? zen.accentSoft : zen.accentLightBg,
-                borderRadius: BorderRadius.circular(100),
-                border: Border.all(color: zen.accentLightBorder),
-              ),
-              child: Text(
-                'BDT ৳',
-                style: AppTextStyles.labelSmall(zen.accent),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        Text(
-          'Insights',
-          style: AppTextStyles.displayLarge(zen.textPrimary),
-        ),
-      ],
+    return Text(
+      'Insights',
+      style: AppTextStyles.displayLarge(zen.textPrimary),
     );
   }
 }

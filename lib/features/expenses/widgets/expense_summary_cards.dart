@@ -10,85 +10,107 @@ class ExpenseSummaryCards extends StatelessWidget {
   final double total;
   final double month;
   final double remaining;
+
   const ExpenseSummaryCards({
     super.key,
     required this.total,
     required this.month,
     required this.remaining,
   });
+
   String _money(double value) => '৳${NumberFormat('#,##0.00').format(value)}';
 
   @override
-  Widget build(BuildContext context) => Column(
-    children: [
-      _card(context, 'Total expenses', _money(total), LucideIcons.receipt),
-      const SizedBox(height: 10),
-      Row(
-        children: [
-          Expanded(
-            child: _card(
-              context,
-              'Spent this month',
-              _money(month),
-              LucideIcons.credit_card,
-              compact: true,
+  Widget build(BuildContext context) {
+    final dailyAvg = month / (DateTime.now().day.clamp(1, 31));
+
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _card(
+                context,
+                'Total expenses',
+                _money(total),
+                LucideIcons.receipt,
+              ),
             ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: _card(
-              context,
-              'Remaining budget',
-              _money(remaining),
-              LucideIcons.wallet,
-              compact: true,
+            const SizedBox(width: 10),
+            Expanded(
+              child: _card(
+                context,
+                'Remaining budget',
+                _money(remaining),
+                LucideIcons.wallet,
+              ),
             ),
-          ),
-        ],
-      ),
-    ],
-  );
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: _card(
+                context,
+                'Spent this month',
+                _money(month),
+                LucideIcons.credit_card,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _card(
+                context,
+                'Daily average',
+                _money(dailyAvg),
+                LucideIcons.calendar,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
 
   Widget _card(
     BuildContext context,
     String label,
     String amount,
-    IconData icon, {
-    bool compact = false,
-  }) {
+    IconData icon,
+  ) {
     final zen = context.zenColors;
+
     return ZenCard(
-      padding: EdgeInsets.all(compact ? 14 : 16),
-      child: Row(
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(9),
-            decoration: BoxDecoration(
-              color: zen.accentLightBg,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, size: 18, color: zen.accent),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.labelSmall(zen.textSecondary),
+              ),
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: zen.accentLightBg,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, size: 15, color: zen.accent),
+              ),
+            ],
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.labelSmall(zen.textSecondary),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  amount,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.headingSmall(zen.textPrimary),
-                ),
-              ],
-            ),
+          const SizedBox(height: 8),
+          Text(
+            amount,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.headingSmall(zen.textPrimary),
           ),
         ],
       ),

@@ -20,44 +20,33 @@ class TasksHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final zen = context.zenColors;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // Subtitle matching website
-        Text(
-          'Stay on top of your day',
-          style: AppTextStyles.bodySmall(zen.textSecondary),
+        Expanded(
+          child: Text(
+            'Tasks',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.displayLarge(zen.textPrimary),
+          ),
         ),
-        const SizedBox(height: 4),
-
-        // Main Title Row
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Tasks',
-              style: AppTextStyles.displayLarge(zen.textPrimary),
+            ZenBadge(
+              label: '$pendingCount ${pendingCount == 1 ? 'task' : 'tasks'} left',
+              color: zen.accent,
+              showDot: false,
             ),
-            Row(
-              children: [
-                // "X tasks left" Pill Badge
-                ZenBadge(
-                  label: '$pendingCount ${pendingCount == 1 ? 'task' : 'tasks'} left',
-                  color: zen.accent,
-                  showDot: false,
-                ),
-                const SizedBox(width: 10),
-
-                // "+ New task" Pill Button
-                ZenButton(
-                  label: 'New task',
-                  icon: LucideIcons.plus,
-                  height: 38,
-                  width: 116,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  onPressed: onNewTaskPressed,
-                ),
-              ],
+            const SizedBox(width: 10),
+            ZenButton(
+              label: 'New task',
+              icon: LucideIcons.plus,
+              height: 38,
+              width: 116,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              onPressed: onNewTaskPressed,
             ),
           ],
         ),

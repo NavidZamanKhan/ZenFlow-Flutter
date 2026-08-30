@@ -13,50 +13,28 @@ class ExpensesHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final zen = context.zenColors;
     return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'MONEY OVERVIEW',
-                style: AppTextStyles.labelSmall(zen.accent),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Expenses & Budget',
-                style: AppTextStyles.headingLarge(zen.textPrimary),
-              ),
-              const SizedBox(height: 5),
-              Text(
-                'Track every taka with clarity.',
-                style: AppTextStyles.bodySmall(zen.textSecondary),
-              ),
-            ],
+          child: Text(
+            'Expenses & Budget',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.headingLarge(zen.textPrimary).copyWith(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-              decoration: BoxDecoration(
-                color: zen.accentLightBg,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: zen.accentLightBorder),
-              ),
-              child: Text('BDT ৳', style: AppTextStyles.labelSmall(zen.accent)),
-            ),
-            const SizedBox(height: 9),
-            ZenButton(
-              label: 'Add expense',
-              icon: LucideIcons.plus,
-              height: 38,
-              width: 132,
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              onPressed: onAddExpense,
-            ),
-          ],
+        const SizedBox(width: 10),
+        ZenButton(
+          label: 'Add expense',
+          icon: LucideIcons.plus,
+          height: 38,
+          width: 124,
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          onPressed: onAddExpense,
         ),
       ],
     );

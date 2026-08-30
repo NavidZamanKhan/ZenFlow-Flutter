@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:intl/intl.dart';
@@ -26,7 +27,28 @@ class ExpensesScreen extends StatelessWidget {
     'Shopping',
     'Subscription',
     'Education',
+    'Food',
+    'Transportation',
   ];
+
+  static Color? _categoryColor(String name) {
+    switch (name) {
+      case 'Bills':
+        return const Color(0xFF8B5CF6);
+      case 'Shopping':
+        return const Color(0xFFEC4899);
+      case 'Subscription':
+        return const Color(0xFF3B82F6);
+      case 'Education':
+        return const Color(0xFF06B6D4);
+      case 'Food':
+        return const Color(0xFFF59E0B);
+      case 'Transportation':
+        return const Color(0xFF10B981);
+      default:
+        return null;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -94,7 +116,7 @@ class ExpensesScreen extends StatelessWidget {
         ),
         const SizedBox(height: 20),
         SizedBox(
-          height: 37,
+          height: 38,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: _filters.length,
@@ -102,19 +124,62 @@ class ExpensesScreen extends StatelessWidget {
             itemBuilder: (_, index) {
               final filter = _filters[index];
               final active = filter == state.selectedCategory;
-              return ChoiceChip(
-                label: Text(
-                  filter,
-                  style: AppTextStyles.labelSmall(
-                    active ? Colors.white : zen.textSecondary,
+              final dotColor = _categoryColor(filter);
+
+              return GestureDetector(
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  context.read<ExpensesBloc>().add(FilterExpenses(filter));
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 280),
+                  curve: Curves.easeOutCubic,
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: active ? zen.accent : zen.subtleFill,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: active ? zen.accent : zen.border.withValues(alpha: 0.8),
+                      width: 1.0,
+                    ),
+                    boxShadow: active
+                        ? [
+                            BoxShadow(
+                              color: zen.accent.withValues(alpha: 0.25),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (dotColor != null && !active) ...[
+                        Container(
+                          width: 7,
+                          height: 7,
+                          decoration: BoxDecoration(
+                            color: dotColor,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                      ],
+                      AnimatedDefaultTextStyle(
+                        duration: const Duration(milliseconds: 240),
+                        curve: Curves.easeOutCubic,
+                        style: AppTextStyles.labelSmall(
+                          active ? Colors.white : zen.textPrimary,
+                        ).copyWith(
+                          fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                          fontSize: 12.5,
+                        ),
+                        child: Text(filter),
+                      ),
+                    ],
                   ),
                 ),
-                selected: active,
-                selectedColor: zen.accent,
-                backgroundColor: zen.subtleFill,
-                side: BorderSide(color: active ? zen.accent : zen.border),
-                onSelected: (_) =>
-                    context.read<ExpensesBloc>().add(FilterExpenses(filter)),
               );
             },
           ),

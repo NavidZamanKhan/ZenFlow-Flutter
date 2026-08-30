@@ -21,20 +21,18 @@ class CalendarHeader extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Subtitle
-        Text(
-          'Plan your time with intent',
-          style: AppTextStyles.bodySmall(zen.textSecondary),
-        ),
-        const SizedBox(height: 4),
-
         // Main Title Row with "+ New event" button
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Text(
-              'Calendar',
-              style: AppTextStyles.displayLarge(zen.textPrimary),
+            Expanded(
+              child: Text(
+                'Calendar',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.displayLarge(zen.textPrimary),
+              ),
             ),
             ZenButton(
               label: 'New event',
@@ -46,7 +44,7 @@ class CalendarHeader extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
 
         // Legend Row: Events (Blue) & Task Deadlines (Emerald)
         Row(

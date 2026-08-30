@@ -8,6 +8,7 @@ import '../../../core/widgets/zen_button.dart';
 import '../../../core/widgets/zen_text_field.dart';
 import '../models/task_filter.dart';
 import '../models/task_item.dart';
+import 'priority_segmented_bar.dart';
 
 class NewTaskBottomSheet extends StatefulWidget {
   final ValueChanged<TaskItem> onTaskCreated;
@@ -271,33 +272,9 @@ class _NewTaskBottomSheetState extends State<NewTaskBottomSheet> {
                     children: [
                       Text('Priority', style: AppTextStyles.labelMedium(zen.textPrimary)),
                       const SizedBox(height: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: zen.subtleFill,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: zen.border),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            _PriorityOption(
-                              label: 'Low',
-                              isSelected: _selectedPriority == TaskPriority.low,
-                              onTap: () => setState(() => _selectedPriority = TaskPriority.low),
-                            ),
-                            _PriorityOption(
-                              label: 'Med',
-                              isSelected: _selectedPriority == TaskPriority.medium,
-                              onTap: () => setState(() => _selectedPriority = TaskPriority.medium),
-                            ),
-                            _PriorityOption(
-                              label: 'High',
-                              isSelected: _selectedPriority == TaskPriority.high,
-                              onTap: () => setState(() => _selectedPriority = TaskPriority.high),
-                            ),
-                          ],
-                        ),
+                      PrioritySegmentedBar(
+                        selectedPriority: _selectedPriority,
+                        onPriorityChanged: (p) => setState(() => _selectedPriority = p),
                       ),
                     ],
                   ),
@@ -338,50 +315,6 @@ class _NewTaskBottomSheetState extends State<NewTaskBottomSheet> {
               ],
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _PriorityOption extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _PriorityOption({
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final zen = context.zenColors;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected ? zen.card : Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.06),
-                    blurRadius: 4,
-                    offset: const Offset(0, 1),
-                  ),
-                ]
-              : null,
-        ),
-        child: Text(
-          label,
-          style: AppTextStyles.labelSmall(
-            isSelected ? zen.accent : zen.textSecondary,
-          ),
         ),
       ),
     );

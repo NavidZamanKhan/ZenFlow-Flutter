@@ -37,11 +37,17 @@ class CalendarScreen extends StatelessWidget {
         child: SafeArea(
           child: BlocBuilder<CalendarBloc, CalendarState>(
             builder: (context, state) {
-              return ListView(
-                physics: const AlwaysScrollableScrollPhysics(
-                  parent: BouncingScrollPhysics(),
-                ),
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 118),
+              return RefreshIndicator(
+                color: zen.accent,
+                backgroundColor: zen.card,
+                onRefresh: () async {
+                  await Future.delayed(const Duration(milliseconds: 650));
+                },
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(
+                    parent: BouncingScrollPhysics(),
+                  ),
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 118),
                 children: [
                   // Top Header with Legend & "+ New event"
                   CalendarHeader(
@@ -110,6 +116,7 @@ class CalendarScreen extends StatelessWidget {
                     ),
                   ],
                 ],
+                ),
               );
             },
           ),

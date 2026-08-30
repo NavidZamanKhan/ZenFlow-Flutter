@@ -54,12 +54,18 @@ class _TasksScreenState extends State<TasksScreen> {
             builder: (context, state) {
               final tasks = state.filteredTasks;
 
-              return ListView(
-                keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                physics: const AlwaysScrollableScrollPhysics(
-                  parent: BouncingScrollPhysics(),
-                ),
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 118),
+              return RefreshIndicator(
+                color: zen.accent,
+                backgroundColor: zen.card,
+                onRefresh: () async {
+                  await Future.delayed(const Duration(milliseconds: 650));
+                },
+                child: ListView(
+                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                  physics: const AlwaysScrollableScrollPhysics(
+                    parent: BouncingScrollPhysics(),
+                  ),
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 118),
               children: [
                 // Top Header (Title + Count + New Task button)
                 TasksHeader(
@@ -174,11 +180,12 @@ class _TasksScreenState extends State<TasksScreen> {
                   ),
                 ),
               ],
-            );
-          },
-        ),
+            ),
+          );
+        },
       ),
     ),
-  );
-}
+  ),
+);
+  }
 }

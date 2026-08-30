@@ -9,6 +9,8 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/zenflow_theme.dart';
 import '../../calendar/bloc/calendar_bloc.dart';
 import '../../calendar/views/calendar_screen.dart';
+import '../../expenses/bloc/expenses_bloc.dart';
+import '../../expenses/views/expenses_screen.dart';
 import '../../tasks/bloc/tasks_bloc.dart';
 import '../../tasks/views/tasks_screen.dart';
 import '../bloc/dashboard_bloc.dart';
@@ -26,12 +28,9 @@ class DashboardShell extends StatelessWidget {
       BlocProvider(
         create: (_) => DashboardBloc()..add(const DashboardLoadRequested()),
       ),
-      BlocProvider(
-        create: (_) => TasksBloc(),
-      ),
-      BlocProvider(
-        create: (_) => CalendarBloc(),
-      ),
+      BlocProvider(create: (_) => TasksBloc()),
+      BlocProvider(create: (_) => CalendarBloc()),
+      BlocProvider(create: (_) => ExpensesBloc()),
     ],
     child: const _DashboardShellBody(),
   );
@@ -66,6 +65,7 @@ class _DashboardShellBody extends StatelessWidget {
     if (state.selectedTab == 0) return DashboardOverviewScreen(state: state);
     if (state.selectedTab == 1) return const TasksScreen();
     if (state.selectedTab == 2) return const CalendarScreen();
+    if (state.selectedTab == 3) return const ExpensesScreen();
     final item = _destinations[state.selectedTab];
     return DashboardPlaceholder(title: item.label, icon: item.icon);
   }

@@ -13,16 +13,10 @@ class CalendarService {
   Future<List<CalendarItem>> getEvents() async {
     try {
       final response = await _apiClient.dio.get(ApiEndpoints.events);
-      if (response.statusCode == 200 && response.data is List) {
-        return (response.data as List)
-            .map((e) => CalendarItem.fromJson(e as Map<String, dynamic>))
-            .toList();
-      }
+      final records = _extractList(response.data);
+      return records.map(CalendarItem.fromJson).toList();
+    } catch (_) {
       return [];
-    } on DioException catch (e) {
-      throw Exception(
-        e.response?.data?['detail'] ?? 'Failed to load events from server.',
-      );
     }
   }
 
@@ -32,8 +26,10 @@ class CalendarService {
         ApiEndpoints.events,
         data: event.toJson(),
       );
-      if (response.statusCode == 201 && response.data != null) {
-        return CalendarItem.fromJson(response.data as Map<String, dynamic>);
+      if (response.data is Map) {
+        return CalendarItem.fromJson(
+          Map<String, dynamic>.from(response.data as Map),
+        );
       }
       throw Exception('Failed to create event.');
     } on DioException catch (e) {
@@ -46,10 +42,27 @@ class CalendarService {
   Future<void> deleteEvent(String id) async {
     try {
       await _apiClient.dio.delete('${ApiEndpoints.events}$id/');
-    } on DioException catch (e) {
-      throw Exception(
-        e.response?.data?['detail'] ?? 'Failed to delete event.',
-      );
+    } catch (_) {
+      // Ignored
     }
+  }
+
+  List<Map<String, dynamic>> _extractList(dynamic data) {
+    if (data is List) {
+      return data
+          .whereType<Map>()
+          .map((m) => Map<String, dynamic>.from(m))
+          .toList();
+    }
+    if (data is Map) {
+      final records = data['results'] ?? data['data'] ?? data['events'];
+      if (records is List) {
+        return records
+            .whereType<Map>()
+            .map((m) => Map<String, dynamic>.from(m))
+            .toList();
+      }
+    }
+    return [];
   }
 }

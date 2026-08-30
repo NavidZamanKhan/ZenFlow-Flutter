@@ -14,16 +14,10 @@ class ExpensesService {
   Future<List<ExpenseItem>> getExpenses() async {
     try {
       final response = await _apiClient.dio.get(ApiEndpoints.expenses);
-      if (response.statusCode == 200 && response.data is List) {
-        return (response.data as List)
-            .map((e) => ExpenseItem.fromJson(e as Map<String, dynamic>))
-            .toList();
-      }
+      final records = _extractList(response.data);
+      return records.map(ExpenseItem.fromJson).toList();
+    } catch (_) {
       return [];
-    } on DioException catch (e) {
-      throw Exception(
-        e.response?.data?['detail'] ?? 'Failed to load expenses from server.',
-      );
     }
   }
 
@@ -33,8 +27,10 @@ class ExpensesService {
         ApiEndpoints.expenses,
         data: expense.toJson(),
       );
-      if (response.statusCode == 201 && response.data != null) {
-        return ExpenseItem.fromJson(response.data as Map<String, dynamic>);
+      if (response.data is Map) {
+        return ExpenseItem.fromJson(
+          Map<String, dynamic>.from(response.data as Map),
+        );
       }
       throw Exception('Failed to create expense.');
     } on DioException catch (e) {
@@ -59,10 +55,12 @@ class ExpensesService {
   ) async {
     try {
       final response = await _apiClient.dio.get(ApiEndpoints.budget);
-      if (response.statusCode == 200 && response.data != null) {
-        final data = response.data as Map<String, dynamic>;
-        final categoryBudgets =
-            (data['categoryBudgets'] as Map<String, dynamic>?) ?? {};
+      if (response.data is Map) {
+        final data = Map<String, dynamic>.from(response.data as Map);
+        final rawBudgets = data['categoryBudgets'] ?? data['category_budgets'];
+        final categoryBudgets = rawBudgets is Map
+            ? Map<String, dynamic>.from(rawBudgets)
+            : <String, dynamic>{};
         final currency = data['currency']?.toString() ?? 'BDT';
 
         // Calculate spent amount per category from live expenses
@@ -115,10 +113,8 @@ class ExpensesService {
         return items;
       }
       return [];
-    } on DioException catch (e) {
-      throw Exception(
-        e.response?.data?['detail'] ?? 'Failed to load budget details.',
-      );
+    } catch (_) {
+      return [];
     }
   }
 
@@ -147,10 +143,27 @@ class ExpensesService {
           'warningThresholds': [75, 90, 100],
         },
       );
-    } on DioException catch (e) {
-      throw Exception(
-        e.response?.data?['detail'] ?? 'Failed to update category budget.',
-      );
+    } catch (_) {
+      // Ignored
     }
+  }
+
+  List<Map<String, dynamic>> _extractList(dynamic data) {
+    if (data is List) {
+      return data
+          .whereType<Map>()
+          .map((m) => Map<String, dynamic>.from(m))
+          .toList();
+    }
+    if (data is Map) {
+      final records = data['results'] ?? data['data'] ?? data['expenses'];
+      if (records is List) {
+        return records
+            .whereType<Map>()
+            .map((m) => Map<String, dynamic>.from(m))
+            .toList();
+      }
+    }
+    return [];
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../models/category_budget_item.dart';
+import '../models/expense_item.dart';
 import '../services/expenses_service.dart';
 import 'expenses_event.dart';
 import 'expenses_state.dart';
@@ -29,11 +30,13 @@ class ExpensesBloc extends Bloc<ExpensesEvent, ExpensesState> {
   ) async {
     try {
       final expenses = await _service.getExpenses();
-      final budgets = await _service.getBudget(expenses);
-      emit(state.copyWith(
-        expenses: expenses,
-        budgets: budgets.isNotEmpty ? budgets : state.budgets,
-      ));
+      if (expenses.isNotEmpty) {
+        final budgets = await _service.getBudget(expenses);
+        emit(state.copyWith(
+          expenses: expenses,
+          budgets: budgets.isNotEmpty ? budgets : state.budgets,
+        ));
+      }
     } catch (_) {
       // Keep existing state if offline or token pending
     }
@@ -43,13 +46,11 @@ class ExpensesBloc extends Bloc<ExpensesEvent, ExpensesState> {
     AddExpense event,
     Emitter<ExpensesState> emit,
   ) async {
-    // Optimistic insert
     final previousExpenses = state.expenses;
     emit(state.copyWith(expenses: [event.expense, ...state.expenses]));
 
     try {
       final created = await _service.createExpense(event.expense);
-      // Replace dummy with server created
       final updatedList = state.expenses
           .map((e) => e.id == event.expense.id ? created : e)
           .toList();
@@ -59,7 +60,6 @@ class ExpensesBloc extends Bloc<ExpensesEvent, ExpensesState> {
         budgets: updatedBudgets.isNotEmpty ? updatedBudgets : state.budgets,
       ));
     } catch (_) {
-      // Rollback on network failure
       emit(state.copyWith(expenses: previousExpenses));
     }
   }
@@ -81,7 +81,6 @@ class ExpensesBloc extends Bloc<ExpensesEvent, ExpensesState> {
         budgets: updatedBudgets.isNotEmpty ? updatedBudgets : state.budgets,
       ));
     } catch (_) {
-      // Rollback on failure
       emit(state.copyWith(expenses: previousExpenses));
     }
   }
@@ -111,14 +110,73 @@ class ExpensesBloc extends Bloc<ExpensesEvent, ExpensesState> {
     }
   }
 
-  static ExpensesState _initialState() => const ExpensesState(
-        budgets: [
+  static ExpensesState _initialState() => ExpensesState(
+        budgets: const [
           CategoryBudgetItem(category: 'Bills', budgetAmount: 20000, spentAmount: 16200),
           CategoryBudgetItem(category: 'Shopping', budgetAmount: 5000, spentAmount: 2500),
           CategoryBudgetItem(category: 'Food', budgetAmount: 10000, spentAmount: 0),
           CategoryBudgetItem(category: 'Transportation', budgetAmount: 2000, spentAmount: 0),
           CategoryBudgetItem(category: 'Entertainment', budgetAmount: 3000, spentAmount: 0),
         ],
-        expenses: [],
+        expenses: [
+          ExpenseItem(
+            id: '1',
+            title: 'Have to buy a mouse',
+            amount: 2500,
+            category: 'Shopping',
+            date: DateTime(2026, 8, 27),
+            paymentMethod: 'Cash',
+          ),
+          ExpenseItem(
+            id: '2',
+            title: 'Internet bill',
+            amount: 1200,
+            category: 'Bills',
+            date: DateTime(2026, 8, 10),
+            paymentMethod: 'Mobile Wallet',
+            isRecurring: true,
+            recurringInterval: 'monthly',
+          ),
+          ExpenseItem(
+            id: '3',
+            title: 'YouTube',
+            amount: 169,
+            category: 'Subscription',
+            date: DateTime(2026, 8, 10),
+            paymentMethod: 'Card',
+            isRecurring: true,
+            recurringInterval: 'monthly',
+          ),
+          ExpenseItem(
+            id: '4',
+            title: 'Netflix',
+            amount: 1200,
+            category: 'Subscription',
+            date: DateTime(2026, 8, 8),
+            paymentMethod: 'Card',
+            isRecurring: true,
+            recurringInterval: 'monthly',
+          ),
+          ExpenseItem(
+            id: '5',
+            title: 'Spotify',
+            amount: 219,
+            category: 'Subscription',
+            date: DateTime(2026, 8, 5),
+            paymentMethod: 'Card',
+            isRecurring: true,
+            recurringInterval: 'monthly',
+          ),
+          ExpenseItem(
+            id: '6',
+            title: 'Rent',
+            amount: 15000,
+            category: 'Bills',
+            date: DateTime(2026, 8, 5),
+            paymentMethod: 'Card',
+            isRecurring: true,
+            recurringInterval: 'monthly',
+          ),
+        ],
       );
 }

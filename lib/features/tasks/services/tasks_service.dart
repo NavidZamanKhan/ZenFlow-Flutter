@@ -12,16 +12,10 @@ class TasksService {
   Future<List<TaskItem>> getTasks() async {
     try {
       final response = await _apiClient.dio.get(ApiEndpoints.tasks);
-      if (response.statusCode == 200 && response.data is List) {
-        return (response.data as List)
-            .map((e) => TaskItem.fromJson(e as Map<String, dynamic>))
-            .toList();
-      }
+      final records = _extractList(response.data);
+      return records.map(TaskItem.fromJson).toList();
+    } catch (_) {
       return [];
-    } on DioException catch (e) {
-      throw Exception(
-        e.response?.data?['detail'] ?? 'Failed to load tasks from server.',
-      );
     }
   }
 
@@ -31,8 +25,8 @@ class TasksService {
         ApiEndpoints.tasks,
         data: task.toJson(),
       );
-      if (response.statusCode == 201 && response.data != null) {
-        return TaskItem.fromJson(response.data as Map<String, dynamic>);
+      if (response.data is Map) {
+        return TaskItem.fromJson(Map<String, dynamic>.from(response.data as Map));
       }
       throw Exception('Failed to create task.');
     } on DioException catch (e) {
@@ -48,8 +42,8 @@ class TasksService {
         '${ApiEndpoints.tasks}${task.id}/',
         data: task.toJson(),
       );
-      if (response.statusCode == 200 && response.data != null) {
-        return TaskItem.fromJson(response.data as Map<String, dynamic>);
+      if (response.data is Map) {
+        return TaskItem.fromJson(Map<String, dynamic>.from(response.data as Map));
       }
       return task;
     } on DioException catch (e) {
@@ -65,20 +59,35 @@ class TasksService {
         '${ApiEndpoints.tasks}$id/',
         data: {'completed': completed},
       );
-    } on DioException catch (e) {
-      throw Exception(
-        e.response?.data?['detail'] ?? 'Failed to toggle task status.',
-      );
+    } catch (_) {
+      // Ignored
     }
   }
 
   Future<void> deleteTask(String id) async {
     try {
       await _apiClient.dio.delete('${ApiEndpoints.tasks}$id/');
-    } on DioException catch (e) {
-      throw Exception(
-        e.response?.data?['detail'] ?? 'Failed to delete task.',
-      );
+    } catch (_) {
+      // Ignored
     }
+  }
+
+  List<Map<String, dynamic>> _extractList(dynamic data) {
+    if (data is List) {
+      return data
+          .whereType<Map>()
+          .map((m) => Map<String, dynamic>.from(m))
+          .toList();
+    }
+    if (data is Map) {
+      final records = data['results'] ?? data['data'] ?? data['tasks'];
+      if (records is List) {
+        return records
+            .whereType<Map>()
+            .map((m) => Map<String, dynamic>.from(m))
+            .toList();
+      }
+    }
+    return [];
   }
 }

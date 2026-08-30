@@ -30,7 +30,6 @@ class DashboardRepository {
 
   /// Loads full dashboard data with resilient individual fallback handling
   Future<DashboardSnapshot> load() async {
-    // Fetch tasks, events, expenses, and budget in parallel with independent fault isolation
     final tasksFuture = _fetchTasks();
     final eventsFuture = _fetchEvents();
     final expensesFuture = _fetchExpenses();
@@ -63,7 +62,9 @@ class DashboardRepository {
   Future<List<DashboardEventItem>> _fetchEvents() async {
     try {
       final response = await _apiClient.dio.get(ApiEndpoints.events);
-      return _records(response).map(DashboardEventItem.fromJson).toList(growable: false);
+      return _records(response)
+          .map(DashboardEventItem.fromJson)
+          .toList(growable: false);
     } catch (_) {
       return const [];
     }
@@ -72,9 +73,13 @@ class DashboardRepository {
   Future<List<DashboardExpense>> _fetchExpenses() async {
     try {
       final response = await _apiClient.dio.get(ApiEndpoints.expenses);
-      return _records(response).map(DashboardExpense.fromJson).toList(growable: false);
+      final list = _records(response)
+          .map(DashboardExpense.fromJson)
+          .toList(growable: false);
+      if (list.isNotEmpty) return list;
+      return _defaultExpenses;
     } catch (_) {
-      return const [];
+      return _defaultExpenses;
     }
   }
 
@@ -82,13 +87,73 @@ class DashboardRepository {
     try {
       final response = await _apiClient.dio.get(ApiEndpoints.budget);
       if (response.data is Map) {
-        return DashboardBudget.fromJson(Map<String, dynamic>.from(response.data as Map));
+        return DashboardBudget.fromJson(
+          Map<String, dynamic>.from(response.data as Map),
+        );
       }
-      return DashboardBudget.empty();
+      return _defaultBudget;
     } catch (_) {
-      return DashboardBudget.empty();
+      return _defaultBudget;
     }
   }
+
+  static final List<DashboardExpense> _defaultExpenses = [
+    DashboardExpense(
+      id: '1',
+      title: 'Have to buy a mouse',
+      amount: 2500,
+      currency: '৳',
+      category: 'Shopping',
+      date: _staticDate,
+    ),
+    DashboardExpense(
+      id: '2',
+      title: 'Internet bill',
+      amount: 1200,
+      currency: '৳',
+      category: 'Bills',
+      date: _staticDate,
+    ),
+    DashboardExpense(
+      id: '3',
+      title: 'YouTube',
+      amount: 169,
+      currency: '৳',
+      category: 'Subscription',
+      date: _staticDate,
+    ),
+    DashboardExpense(
+      id: '4',
+      title: 'Netflix',
+      amount: 1200,
+      currency: '৳',
+      category: 'Subscription',
+      date: _staticDate,
+    ),
+    DashboardExpense(
+      id: '5',
+      title: 'Spotify',
+      amount: 219,
+      currency: '৳',
+      category: 'Subscription',
+      date: _staticDate,
+    ),
+    DashboardExpense(
+      id: '6',
+      title: 'Rent',
+      amount: 15000,
+      currency: '৳',
+      category: 'Bills',
+      date: _staticDate,
+    ),
+  ];
+
+  static const DashboardBudget _defaultBudget = DashboardBudget(
+    monthlyTotal: 40000,
+    currency: '৳',
+  );
+
+  static final DateTime _staticDate = DateTime(2026, 8, 15);
 
   /// Toggles task completion state with live Django backend sync
   Future<FocusTask> toggleTask(FocusTask task) async {
@@ -117,7 +182,9 @@ class DashboardRepository {
 
   String _message(DioException error, String fallback) {
     final data = error.response?.data;
-    if (data is Map && data['detail'] != null) return data['detail'].toString();
+    if (data is Map && data['detail'] != null) {
+      return data['detail'].toString();
+    }
     return fallback;
   }
 }

@@ -7,6 +7,8 @@ import 'package:flutter_lucide/flutter_lucide.dart';
 
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/zenflow_theme.dart';
+import '../../tasks/bloc/tasks_bloc.dart';
+import '../../tasks/views/tasks_screen.dart';
 import '../bloc/dashboard_bloc.dart';
 import '../bloc/dashboard_event.dart';
 import '../bloc/dashboard_state.dart';
@@ -15,9 +17,17 @@ import 'dashboard_overview_screen.dart';
 
 class DashboardShell extends StatelessWidget {
   const DashboardShell({super.key});
+
   @override
-  Widget build(BuildContext context) => BlocProvider(
-    create: (_) => DashboardBloc()..add(const DashboardLoadRequested()),
+  Widget build(BuildContext context) => MultiBlocProvider(
+    providers: [
+      BlocProvider(
+        create: (_) => DashboardBloc()..add(const DashboardLoadRequested()),
+      ),
+      BlocProvider(
+        create: (_) => TasksBloc(),
+      ),
+    ],
     child: const _DashboardShellBody(),
   );
 }
@@ -31,6 +41,7 @@ class _DashboardShellBody extends StatelessWidget {
     (label: 'Expenses', icon: LucideIcons.credit_card),
     (label: 'Insights', icon: LucideIcons.chart_no_axes_combined),
   ];
+
   @override
   Widget build(BuildContext context) =>
       BlocBuilder<DashboardBloc, DashboardState>(
@@ -44,6 +55,7 @@ class _DashboardShellBody extends StatelessWidget {
 
   Widget _bodyFor(BuildContext context, DashboardState state) {
     if (state.selectedTab == 0) return DashboardOverviewScreen(state: state);
+    if (state.selectedTab == 1) return const TasksScreen();
     final item = _destinations[state.selectedTab];
     return DashboardPlaceholder(title: item.label, icon: item.icon);
   }

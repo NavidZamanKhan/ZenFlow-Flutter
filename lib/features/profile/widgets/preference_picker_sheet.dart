@@ -28,6 +28,7 @@ class PreferencePickerSheet extends StatelessWidget {
   }) {
     return showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => PreferencePickerSheet(
         title: title,
@@ -43,7 +44,12 @@ class PreferencePickerSheet extends StatelessWidget {
     final zen = context.zenColors;
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 14, 20, 30),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+        left: 20,
+        right: 20,
+        top: 14,
+      ),
       decoration: BoxDecoration(
         color: zen.card,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
@@ -89,15 +95,19 @@ class PreferencePickerSheet extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
-          // Options List
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: options.length,
-            separatorBuilder: (ctx, idx) => Divider(
-              height: 1,
-              color: zen.border.withValues(alpha: 0.5),
+          // Options List with Constrained Scroll View
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.55,
             ),
+            child: ListView.separated(
+              shrinkWrap: true,
+              physics: const BouncingScrollPhysics(),
+              itemCount: options.length,
+              separatorBuilder: (ctx, idx) => Divider(
+                height: 1,
+                color: zen.border.withValues(alpha: 0.5),
+              ),
             itemBuilder: (context, index) {
               final option = options[index];
               final isSelected = option == selectedValue;
@@ -135,8 +145,9 @@ class PreferencePickerSheet extends StatelessWidget {
               );
             },
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 }

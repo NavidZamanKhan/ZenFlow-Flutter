@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/zenflow_theme.dart';
 
-enum ZenButtonVariant { primary, outlined, subtle, danger }
+enum ZenButtonVariant { primary, outlined, subtle, danger, dangerSolid }
 
 class ZenButton extends StatelessWidget {
   final String label;
@@ -55,11 +56,15 @@ class ZenButton extends StatelessWidget {
         break;
       case ZenButtonVariant.danger:
         bg = Colors.transparent;
-        fg = Theme.of(context).colorScheme.error;
+        fg = AppColors.danger;
         borderSide = BorderSide(
-          color: Theme.of(context).colorScheme.error.withValues(alpha: 0.3),
+          color: AppColors.danger.withValues(alpha: 0.3),
           width: 1,
         );
+        break;
+      case ZenButtonVariant.dangerSolid:
+        bg = AppColors.danger;
+        fg = Colors.white;
         break;
     }
 

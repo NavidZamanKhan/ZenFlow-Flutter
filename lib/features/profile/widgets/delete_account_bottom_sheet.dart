@@ -318,41 +318,25 @@ class _DeleteAccountBottomSheetState extends State<DeleteAccountBottomSheet> {
                   Row(
                     children: [
                       Expanded(
-                        child: OutlinedButton.icon(
+                        child: ZenButton(
+                          label: 'Back',
+                          icon: LucideIcons.arrow_left,
+                          variant: ZenButtonVariant.outlined,
+                          height: 44,
                           onPressed: _submitting
                               ? null
                               : () => setState(() => _confirmStep = false),
-                          icon: Icon(LucideIcons.arrow_left,
-                              size: 15, color: zen.textPrimary),
-                          label: Text(
-                            'Back',
-                            style: AppTextStyles.labelMedium(zen.textPrimary),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            side: BorderSide(color: zen.border),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: ElevatedButton(
+                        child: ZenButton(
+                          label: _submitting ? 'Deleting...' : 'Yes, delete',
+                          icon: LucideIcons.trash_2,
+                          variant: ZenButtonVariant.dangerSolid,
+                          height: 44,
+                          isLoading: _submitting,
                           onPressed: _submitting ? null : _handleFinalDelete,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.danger,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: Text(
-                            _submitting ? 'Deleting...' : 'Yes, delete',
-                            style: const TextStyle(fontWeight: FontWeight.w700),
-                          ),
                         ),
                       ),
                     ],
@@ -406,25 +390,16 @@ class _DeleteAccountBottomSheetState extends State<DeleteAccountBottomSheet> {
                   ),
                   const SizedBox(height: 20),
 
-                  ElevatedButton(
+                  ZenButton(
+                    label: _sendingOtp
+                        ? 'Sending code...'
+                        : 'Send verification code',
+                    icon: LucideIcons.mail,
+                    variant: ZenButtonVariant.dangerSolid,
+                    height: 46,
+                    width: double.infinity,
+                    isLoading: _sendingOtp,
                     onPressed: _sendingOtp ? null : _handleSendOtp,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.danger,
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size(double.infinity, 44),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                    child: Text(
-                      _sendingOtp
-                          ? 'Sending code...'
-                          : 'Send verification code',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13.5,
-                      ),
-                    ),
                   ),
                 ] else ...[
                   // Case B - Step 2: OTP & Password Verification Input
@@ -491,21 +466,12 @@ class _DeleteAccountBottomSheetState extends State<DeleteAccountBottomSheet> {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      ElevatedButton(
+                      ZenButton(
+                        label: 'Continue to confirmation',
+                        variant: ZenButtonVariant.dangerSolid,
+                        height: 42,
+                        width: 205,
                         onPressed: _handleProceedToConfirm,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.danger,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 18, vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text(
-                          'Continue to confirmation',
-                          style: TextStyle(fontWeight: FontWeight.w700),
-                        ),
                       ),
                     ],
                   ),

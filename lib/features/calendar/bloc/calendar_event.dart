@@ -16,7 +16,7 @@ class LoadCalendarEvent extends CalendarEvent {
 }
 
 class SelectDateEvent extends CalendarEvent {
-  final DateTime selectedDate;
+  final DateTime? selectedDate;
 
   const SelectDateEvent(this.selectedDate);
 

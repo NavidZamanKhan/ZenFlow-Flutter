@@ -49,74 +49,106 @@ class CalendarScreen extends StatelessWidget {
                     parent: BouncingScrollPhysics(),
                   ),
                   padding: const EdgeInsets.fromLTRB(20, 20, 20, 118),
-                children: [
-                  // Top Header with Legend & "+ New event"
-                  CalendarHeader(
-                    onNewEventPressed: () =>
-                        _openNewEventModal(context, state.selectedDate),
-                  ),
-                  const SizedBox(height: 18),
+                  children: [
+                    // Top Header with Legend & "+ New event"
+                    CalendarHeader(
+                      onNewEventPressed: () => _openNewEventModal(
+                        context,
+                        state.selectedDate ?? DateTime.now(),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
 
-                  // View Switcher [ Month | Week | Schedule ]
-                  CalendarViewSwitcher(
-                    currentMode: state.viewMode,
-                    onModeChanged: (mode) {
-                      context.read<CalendarBloc>().add(ChangeViewModeEvent(mode));
-                    },
-                  ),
-                  const SizedBox(height: 18),
-
-                  // Calendar Surface based on View Mode
-                  if (state.viewMode == CalendarViewMode.month) ...[
-                    CalendarMonthGrid(
-                      focusedMonth: state.focusedMonth,
-                      selectedDate: state.selectedDate,
-                      items: state.items,
-                      onDateSelected: (date) {
-                        context.read<CalendarBloc>().add(SelectDateEvent(date));
-                      },
-                      onPreviousMonth: () {
-                        context.read<CalendarBloc>().add(const PreviousMonthEvent());
-                      },
-                      onNextMonth: () {
-                        context.read<CalendarBloc>().add(const NextMonthEvent());
-                      },
-                      onTodayPressed: () {
-                        context.read<CalendarBloc>().add(const JumpToTodayEvent());
+                    // View Switcher [ Month | Week | Schedule ]
+                    CalendarViewSwitcher(
+                      currentMode: state.viewMode,
+                      onModeChanged: (mode) {
+                        context
+                            .read<CalendarBloc>()
+                            .add(ChangeViewModeEvent(mode));
                       },
                     ),
                     const SizedBox(height: 18),
-                    CalendarDayAgenda(
-                      selectedDate: state.selectedDate,
-                      items: state.itemsForSelectedDate,
-                      onAddEventPressed: () =>
-                          _openNewEventModal(context, state.selectedDate),
-                    ),
-                  ] else if (state.viewMode == CalendarViewMode.week) ...[
-                    CalendarWeekStrip(
-                      selectedDate: state.selectedDate,
-                      items: state.items,
-                      onDateSelected: (date) {
-                        context.read<CalendarBloc>().add(SelectDateEvent(date));
-                      },
-                    ),
-                    const SizedBox(height: 18),
-                    CalendarDayAgenda(
-                      selectedDate: state.selectedDate,
-                      items: state.itemsForSelectedDate,
-                      onAddEventPressed: () =>
-                          _openNewEventModal(context, state.selectedDate),
-                    ),
-                  ] else ...[
-                    // Schedule / Agenda Only View
-                    CalendarDayAgenda(
-                      selectedDate: state.selectedDate,
-                      items: state.itemsForSelectedDate,
-                      onAddEventPressed: () =>
-                          _openNewEventModal(context, state.selectedDate),
-                    ),
+
+                    // Calendar Surface based on View Mode
+                    if (state.viewMode == CalendarViewMode.month) ...[
+                      CalendarMonthGrid(
+                        focusedMonth: state.focusedMonth,
+                        selectedDate: state.selectedDate,
+                        items: state.items,
+                        onDateSelected: (date) {
+                          context
+                              .read<CalendarBloc>()
+                              .add(SelectDateEvent(date));
+                        },
+                        onPreviousMonth: () {
+                          context
+                              .read<CalendarBloc>()
+                              .add(const PreviousMonthEvent());
+                        },
+                        onNextMonth: () {
+                          context
+                              .read<CalendarBloc>()
+                              .add(const NextMonthEvent());
+                        },
+                        onTodayPressed: () {
+                          context
+                              .read<CalendarBloc>()
+                              .add(const JumpToTodayEvent());
+                        },
+                      ),
+                      const SizedBox(height: 18),
+                      CalendarDayAgenda(
+                        selectedDate: state.selectedDate,
+                        focusedMonth: state.focusedMonth,
+                        items: state.itemsForSelectedDate,
+                        onAddEventPressed: () => _openNewEventModal(
+                          context,
+                          state.selectedDate ?? DateTime.now(),
+                        ),
+                        onClearSelection: () => context
+                            .read<CalendarBloc>()
+                            .add(const SelectDateEvent(null)),
+                      ),
+                    ] else if (state.viewMode == CalendarViewMode.week) ...[
+                      CalendarWeekStrip(
+                        selectedDate: state.selectedDate,
+                        items: state.items,
+                        onDateSelected: (date) {
+                          context
+                              .read<CalendarBloc>()
+                              .add(SelectDateEvent(date));
+                        },
+                      ),
+                      const SizedBox(height: 18),
+                      CalendarDayAgenda(
+                        selectedDate: state.selectedDate,
+                        focusedMonth: state.focusedMonth,
+                        items: state.itemsForSelectedDate,
+                        onAddEventPressed: () => _openNewEventModal(
+                          context,
+                          state.selectedDate ?? DateTime.now(),
+                        ),
+                        onClearSelection: () => context
+                            .read<CalendarBloc>()
+                            .add(const SelectDateEvent(null)),
+                      ),
+                    ] else ...[
+                      // Schedule / Agenda Only View
+                      CalendarDayAgenda(
+                        selectedDate: state.selectedDate,
+                        focusedMonth: state.focusedMonth,
+                        items: state.itemsForSelectedDate,
+                        onAddEventPressed: () => _openNewEventModal(
+                          context,
+                          state.selectedDate ?? DateTime.now(),
+                        ),
+                        onClearSelection: () => context
+                            .read<CalendarBloc>()
+                            .add(const SelectDateEvent(null)),
+                      ),
+                    ],
                   ],
-                ],
                 ),
               );
             },

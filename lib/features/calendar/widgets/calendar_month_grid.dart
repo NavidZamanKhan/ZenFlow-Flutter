@@ -11,7 +11,7 @@ import '../models/calendar_item.dart';
 
 class CalendarMonthGrid extends StatelessWidget {
   final DateTime focusedMonth;
-  final DateTime selectedDate;
+  final DateTime? selectedDate;
   final List<CalendarItem> items;
   final ValueChanged<DateTime> onDateSelected;
   final VoidCallback onPreviousMonth;
@@ -21,7 +21,7 @@ class CalendarMonthGrid extends StatelessWidget {
   const CalendarMonthGrid({
     super.key,
     required this.focusedMonth,
-    required this.selectedDate,
+    this.selectedDate,
     required this.items,
     required this.onDateSelected,
     required this.onPreviousMonth,
@@ -133,9 +133,10 @@ class CalendarMonthGrid extends StatelessWidget {
             itemBuilder: (context, index) {
               final day = monthDays[index];
               final isCurrentMonth = day.month == focusedMonth.month;
-              final isSelected = day.year == selectedDate.year &&
-                  day.month == selectedDate.month &&
-                  day.day == selectedDate.day;
+              final isSelected = selectedDate != null &&
+                  day.year == selectedDate!.year &&
+                  day.month == selectedDate!.month &&
+                  day.day == selectedDate!.day;
               final isToday = day.year == DateTime.now().year &&
                   day.month == DateTime.now().month &&
                   day.day == DateTime.now().day;

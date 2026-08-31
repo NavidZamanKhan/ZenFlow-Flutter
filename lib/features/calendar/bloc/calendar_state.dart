@@ -7,7 +7,7 @@ enum CalendarStatus { initial, loading, success, failure }
 
 class CalendarState extends Equatable {
   final List<CalendarItem> items;
-  final DateTime selectedDate;
+  final DateTime? selectedDate;
   final DateTime focusedMonth;
   final CalendarViewMode viewMode;
   final CalendarStatus status;
@@ -15,7 +15,7 @@ class CalendarState extends Equatable {
 
   const CalendarState({
     required this.items,
-    required this.selectedDate,
+    this.selectedDate,
     required this.focusedMonth,
     this.viewMode = CalendarViewMode.month,
     this.status = CalendarStatus.initial,
@@ -34,7 +34,17 @@ class CalendarState extends Equatable {
   }
 
   List<CalendarItem> get itemsForSelectedDate {
-    return items.where((item) => item.isSameDay(selectedDate)).toList();
+    if (selectedDate != null) {
+      return items.where((item) => item.isSameDay(selectedDate!)).toList()
+        ..sort((a, b) => a.startDateTime.compareTo(b.startDateTime));
+    }
+
+    // When no specific date is focused, return all items in the focused month
+    return items.where((item) {
+      return item.startDateTime.year == focusedMonth.year &&
+          item.startDateTime.month == focusedMonth.month;
+    }).toList()
+      ..sort((a, b) => a.startDateTime.compareTo(b.startDateTime));
   }
 
   List<CalendarItem> itemsForDate(DateTime date) {
@@ -56,6 +66,7 @@ class CalendarState extends Equatable {
   CalendarState copyWith({
     List<CalendarItem>? items,
     DateTime? selectedDate,
+    bool clearSelectedDate = false,
     DateTime? focusedMonth,
     CalendarViewMode? viewMode,
     CalendarStatus? status,
@@ -63,7 +74,7 @@ class CalendarState extends Equatable {
   }) {
     return CalendarState(
       items: items ?? this.items,
-      selectedDate: selectedDate ?? this.selectedDate,
+      selectedDate: clearSelectedDate ? null : (selectedDate ?? this.selectedDate),
       focusedMonth: focusedMonth ?? this.focusedMonth,
       viewMode: viewMode ?? this.viewMode,
       status: status ?? this.status,

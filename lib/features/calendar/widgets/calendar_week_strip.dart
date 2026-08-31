@@ -9,13 +9,13 @@ import '../../../core/widgets/zen_card.dart';
 import '../models/calendar_item.dart';
 
 class CalendarWeekStrip extends StatelessWidget {
-  final DateTime selectedDate;
+  final DateTime? selectedDate;
   final List<CalendarItem> items;
   final ValueChanged<DateTime> onDateSelected;
 
   const CalendarWeekStrip({
     super.key,
-    required this.selectedDate,
+    this.selectedDate,
     required this.items,
     required this.onDateSelected,
   });
@@ -28,16 +28,18 @@ class CalendarWeekStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final zen = context.zenColors;
-    final weekDays = _generateWeekDays(selectedDate);
+    final baseDate = selectedDate ?? DateTime.now();
+    final weekDays = _generateWeekDays(baseDate);
 
     return ZenCard(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: weekDays.map((day) {
-          final isSelected = day.year == selectedDate.year &&
-              day.month == selectedDate.month &&
-              day.day == selectedDate.day;
+          final isSelected = selectedDate != null &&
+              day.year == selectedDate!.year &&
+              day.month == selectedDate!.month &&
+              day.day == selectedDate!.day;
           final isToday = day.year == DateTime.now().year &&
               day.month == DateTime.now().month &&
               day.day == DateTime.now().day;

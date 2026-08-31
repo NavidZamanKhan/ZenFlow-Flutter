@@ -77,11 +77,24 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
   }
 
   void _onSelectDate(SelectDateEvent event, Emitter<CalendarState> emit) {
-    emit(state.copyWith(
-      selectedDate: event.selectedDate,
-      focusedMonth:
-          DateTime(event.selectedDate.year, event.selectedDate.month, 1),
-    ));
+    if (event.selectedDate == null) {
+      emit(state.copyWith(clearSelectedDate: true));
+      return;
+    }
+
+    final target = event.selectedDate!;
+    if (state.selectedDate != null &&
+        state.selectedDate!.year == target.year &&
+        state.selectedDate!.month == target.month &&
+        state.selectedDate!.day == target.day) {
+      // Tap again to unfocus and show entire month overview!
+      emit(state.copyWith(clearSelectedDate: true));
+    } else {
+      emit(state.copyWith(
+        selectedDate: target,
+        focusedMonth: DateTime(target.year, target.month, 1),
+      ));
+    }
   }
 
   void _onChangeViewMode(

@@ -10,7 +10,6 @@ import '../../auth/bloc/auth_event.dart';
 import '../bloc/profile_bloc.dart';
 import '../bloc/profile_state.dart';
 import '../views/profile_screen.dart';
-import '../views/settings_screen.dart';
 
 class UserMenuBottomSheet extends StatelessWidget {
   const UserMenuBottomSheet({super.key});
@@ -97,51 +96,68 @@ class UserMenuBottomSheet extends StatelessWidget {
               ),
               const SizedBox(height: 18),
 
-              // User Info Header Card
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: zen.subtleFill,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: zen.border),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: zen.accent,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(
-                          profile.initials,
-                          style: AppTextStyles.headingSmall(Colors.white).copyWith(
-                            fontWeight: FontWeight.w700,
+              // User Info Header Card (Tapping opens Profile directly)
+              GestureDetector(
+                onTap: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const ProfileScreen(initialTab: 0),
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: zen.subtleFill,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: zen.border),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: zen.accent,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Text(
+                            profile.initials,
+                            style: AppTextStyles.headingSmall(Colors.white)
+                                .copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            profile.fullName,
-                            style: AppTextStyles.headingSmall(zen.textPrimary),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            profile.email,
-                            style: AppTextStyles.labelSmall(zen.textSecondary),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              profile.fullName,
+                              style: AppTextStyles.headingSmall(zen.textPrimary),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              profile.email,
+                              style:
+                                  AppTextStyles.labelSmall(zen.textSecondary),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                      Icon(
+                        LucideIcons.chevron_right,
+                        size: 16,
+                        color: zen.textMuted,
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
@@ -153,7 +169,9 @@ class UserMenuBottomSheet extends StatelessWidget {
                 onTap: () {
                   Navigator.of(context).pop();
                   Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                    MaterialPageRoute(
+                      builder: (_) => const ProfileScreen(initialTab: 0),
+                    ),
                   );
                 },
               ),
@@ -164,7 +182,9 @@ class UserMenuBottomSheet extends StatelessWidget {
                 onTap: () {
                   Navigator.of(context).pop();
                   Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                    MaterialPageRoute(
+                      builder: (_) => const ProfileScreen(initialTab: 1),
+                    ),
                   );
                 },
               ),

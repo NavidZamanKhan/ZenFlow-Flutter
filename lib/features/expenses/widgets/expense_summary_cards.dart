@@ -8,22 +8,24 @@ import '../../../core/widgets/zen_card.dart';
 
 class ExpenseSummaryCards extends StatelessWidget {
   final double total;
+  final double today;
   final double month;
   final double remaining;
+  final double monthlyBudget;
 
   const ExpenseSummaryCards({
     super.key,
     required this.total,
+    required this.today,
     required this.month,
     required this.remaining,
+    this.monthlyBudget = 40000.0,
   });
 
   String _money(double value) => '৳${NumberFormat('#,##0.00').format(value)}';
 
   @override
   Widget build(BuildContext context) {
-    final dailyAvg = month / (DateTime.now().day.clamp(1, 31));
-
     return Column(
       children: [
         Row(
@@ -40,9 +42,9 @@ class ExpenseSummaryCards extends StatelessWidget {
             Expanded(
               child: _card(
                 context,
-                'Remaining budget',
-                _money(remaining),
-                LucideIcons.wallet,
+                "Today's spending",
+                _money(today),
+                LucideIcons.calendar,
               ),
             ),
           ],
@@ -53,7 +55,7 @@ class ExpenseSummaryCards extends StatelessWidget {
             Expanded(
               child: _card(
                 context,
-                'Spent this month',
+                'This month',
                 _money(month),
                 LucideIcons.credit_card,
               ),
@@ -62,9 +64,11 @@ class ExpenseSummaryCards extends StatelessWidget {
             Expanded(
               child: _card(
                 context,
-                'Daily average',
-                _money(dailyAvg),
-                LucideIcons.calendar,
+                'Remaining budget',
+                _money(remaining),
+                LucideIcons.wallet,
+                subtitle:
+                    '${_money(month)} of ${_money(monthlyBudget)} spent',
               ),
             ),
           ],
@@ -77,8 +81,9 @@ class ExpenseSummaryCards extends StatelessWidget {
     BuildContext context,
     String label,
     String amount,
-    IconData icon,
-  ) {
+    IconData icon, {
+    String? subtitle,
+  }) {
     final zen = context.zenColors;
 
     return ZenCard(
@@ -89,11 +94,13 @@ class ExpenseSummaryCards extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppTextStyles.labelSmall(zen.textSecondary),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.labelSmall(zen.textSecondary),
+                ),
               ),
               Container(
                 padding: const EdgeInsets.all(6),
@@ -112,6 +119,15 @@ class ExpenseSummaryCards extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: AppTextStyles.headingSmall(zen.textPrimary),
           ),
+          if (subtitle != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.labelSmall(zen.textMuted),
+            ),
+          ],
         ],
       ),
     );

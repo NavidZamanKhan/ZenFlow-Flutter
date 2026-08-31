@@ -64,8 +64,13 @@ class ExpensesService {
             : <String, dynamic>{};
         final currency = data['currency']?.toString() ?? 'BDT';
 
+        // Calculate spent amount per category for current month
+        final now = DateTime.now();
+        final currentMonthExpenses = expenses.where((e) =>
+            e.date.year == now.year && e.date.month == now.month);
+
         final spentMap = <String, double>{};
-        for (final exp in expenses) {
+        for (final exp in currentMonthExpenses) {
           spentMap[exp.category] =
               (spentMap[exp.category] ?? 0.0) + exp.amount;
         }
@@ -115,6 +120,21 @@ class ExpensesService {
       return [];
     } catch (_) {
       return [];
+    }
+  }
+
+  Future<double> getMonthlyBudgetTotal() async {
+    try {
+      final response = await _apiClient.dio.get(ApiEndpoints.budget);
+      if (response.data is Map) {
+        final data = Map<String, dynamic>.from(response.data as Map);
+        final rawMonthly = data['monthlyTotal'] ?? data['monthly_total'];
+        if (rawMonthly is num) return rawMonthly.toDouble();
+        return double.tryParse(rawMonthly?.toString() ?? '40000') ?? 40000.0;
+      }
+      return 40000.0;
+    } catch (_) {
+      return 40000.0;
     }
   }
 

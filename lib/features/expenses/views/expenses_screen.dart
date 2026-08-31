@@ -111,8 +111,10 @@ class ExpensesScreen extends StatelessWidget {
       children: [
         ExpenseSummaryCards(
           total: state.totalExpenses,
+          today: state.todaysSpending,
           month: state.spentThisMonth,
           remaining: state.remainingBudget,
+          monthlyBudget: state.monthlyTotalBudget,
         ),
         const SizedBox(height: 20),
         SizedBox(

@@ -121,7 +121,7 @@ class _NewEventBottomSheetState extends State<NewEventBottomSheet> {
           );
 
     final newItem = CalendarItem(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: 'temp-${DateTime.now().millisecondsSinceEpoch}',
       title: title,
       description: _descriptionController.text.trim(),
       startDateTime: startDateTime,

@@ -162,30 +162,80 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
     emit(state.copyWith(items: optimisticList, status: CalendarStatus.success));
 
     try {
-      final created = await _calendarService.createEvent(optimisticItem);
-      final updated = state.items
-          .map((i) => i.id == tempId ? created : i)
-          .toList();
-      _cache.set(_cacheKey, updated);
-      emit(state.copyWith(items: updated));
+      if (event.item.type == CalendarItemType.taskDeadline) {
+        String? dueTimeStr;
+        if (!event.item.isAllDay) {
+          final h =
+              event.item.startDateTime.hour.toString().padLeft(2, '0');
+          final m =
+              event.item.startDateTime.minute.toString().padLeft(2, '0');
+          dueTimeStr = '$h:$m';
+        }
+        final createdTask = await _tasksService.createTask(
+          TaskItem(
+            id: tempId,
+            title: event.item.title,
+            description: event.item.description,
+            dueDate: event.item.startDateTime,
+            dueTime: dueTimeStr,
+            category: event.item.category,
+            createdAt: DateTime.now(),
+          ),
+        );
+        final deadlineItem = CalendarItem(
+          id: 'task_${createdTask.id}',
+          title: createdTask.title,
+          description: createdTask.description,
+          startDateTime: createdTask.dueDate ?? event.item.startDateTime,
+          isAllDay: createdTask.dueTime == null,
+          type: CalendarItemType.taskDeadline,
+          isCompleted: createdTask.isCompleted,
+          category: createdTask.category,
+        );
+        final updated = state.items
+            .map((i) => i.id == tempId ? deadlineItem : i)
+            .toList();
+        _cache.set(_cacheKey, updated);
+        emit(state.copyWith(items: updated));
+      } else {
+        final created = await _calendarService.createEvent(optimisticItem);
+        final updated = state.items
+            .map((i) => i.id == tempId ? created : i)
+            .toList();
+        _cache.set(_cacheKey, updated);
+        emit(state.copyWith(items: updated));
+      }
     } catch (_) {
       _cache.set(_cacheKey, previousItems);
       emit(state.copyWith(items: previousItems));
     }
   }
 
-  void _onToggleTaskItem(
+  Future<void> _onToggleTaskItem(
     ToggleTaskItemEvent event,
     Emitter<CalendarState> emit,
-  ) {
+  ) async {
+    final previousItems = state.items;
+    bool targetCompleted = false;
     final updated = state.items.map((item) {
       if (item.id == event.itemId) {
-        return item.copyWith(isCompleted: !item.isCompleted);
+        targetCompleted = !item.isCompleted;
+        return item.copyWith(isCompleted: targetCompleted);
       }
       return item;
     }).toList();
     _cache.set(_cacheKey, updated);
     emit(state.copyWith(items: updated));
+
+    try {
+      if (event.itemId.startsWith('task_')) {
+        final realTaskId = event.itemId.replaceFirst('task_', '');
+        await _tasksService.toggleTask(realTaskId, targetCompleted);
+      }
+    } catch (_) {
+      _cache.set(_cacheKey, previousItems);
+      emit(state.copyWith(items: previousItems));
+    }
   }
 
   Future<void> _onDeleteCalendarItem(
@@ -199,7 +249,12 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
     emit(state.copyWith(items: updated));
 
     try {
-      await _calendarService.deleteEvent(event.itemId);
+      if (event.itemId.startsWith('task_')) {
+        final realTaskId = event.itemId.replaceFirst('task_', '');
+        await _tasksService.deleteTask(realTaskId);
+      } else {
+        await _calendarService.deleteEvent(event.itemId);
+      }
     } catch (_) {
       _cache.set(_cacheKey, previousItems);
       emit(state.copyWith(items: previousItems));

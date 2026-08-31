@@ -35,6 +35,7 @@ class ExpensesBloc extends Bloc<ExpensesEvent, ExpensesState> {
     return ExpensesState(
       budgets: const [],
       expenses: (cached != null && cached.isNotEmpty) ? cached : const [],
+      monthlyTotalBudget: 40000.0,
     );
   }
 
@@ -47,9 +48,11 @@ class ExpensesBloc extends Bloc<ExpensesEvent, ExpensesState> {
       if (expenses.isNotEmpty) {
         _cache.set(_cacheKey, expenses);
         final budgets = await _service.getBudget(expenses);
+        final monthlyTotal = await _service.getMonthlyBudgetTotal();
         emit(state.copyWith(
           expenses: expenses,
           budgets: budgets.isNotEmpty ? budgets : state.budgets,
+          monthlyTotalBudget: monthlyTotal,
         ));
       }
     } catch (_) {}
@@ -77,10 +80,10 @@ class ExpensesBloc extends Bloc<ExpensesEvent, ExpensesState> {
           .map((e) => e.id == tempId ? created : e)
           .toList();
       _cache.set(_cacheKey, updatedList);
-      final updatedBudgets = await _service.getBudget(updatedList);
+      final budgets = await _service.getBudget(updatedList);
       emit(state.copyWith(
         expenses: updatedList,
-        budgets: updatedBudgets.isNotEmpty ? updatedBudgets : state.budgets,
+        budgets: budgets.isNotEmpty ? budgets : state.budgets,
       ));
     } catch (_) {
       _cache.set(_cacheKey, previousExpenses);
@@ -103,9 +106,9 @@ class ExpensesBloc extends Bloc<ExpensesEvent, ExpensesState> {
     // 2. Silent background network execution
     try {
       await _service.deleteExpense(event.expenseId);
-      final updatedBudgets = await _service.getBudget(optimisticList);
+      final budgets = await _service.getBudget(optimisticList);
       emit(state.copyWith(
-        budgets: updatedBudgets.isNotEmpty ? updatedBudgets : state.budgets,
+        budgets: budgets.isNotEmpty ? budgets : state.budgets,
       ));
     } catch (_) {
       _cache.set(_cacheKey, previousExpenses);

@@ -96,15 +96,42 @@ class _DashboardAuthSyncListener extends StatelessWidget {
   }
 }
 
-class _DashboardShellBody extends StatelessWidget {
+class _DashboardShellBody extends StatefulWidget {
   const _DashboardShellBody();
-  static const _destinations = [
+
+  static const destinations = [
     (label: 'Overview', icon: LucideIcons.layout_dashboard),
     (label: 'Tasks', icon: LucideIcons.list_todo),
     (label: 'Calendar', icon: LucideIcons.calendar_days),
     (label: 'Expenses', icon: LucideIcons.credit_card),
     (label: 'Insights', icon: LucideIcons.chart_no_axes_combined),
   ];
+
+  @override
+  State<_DashboardShellBody> createState() => _DashboardShellBodyState();
+}
+
+class _DashboardShellBodyState extends State<_DashboardShellBody>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      context.read<ProfileBloc>().add(const LoadProfileEvent());
+      context.read<ExpensesBloc>().add(FetchExpenses());
+    }
+  }
 
   @override
   Widget build(BuildContext context) =>
@@ -140,7 +167,7 @@ class _DashboardShellBody extends StatelessWidget {
     if (state.selectedTab == 4) {
       return const InsightsScreen(key: ValueKey('insights_tab_screen'));
     }
-    final item = _destinations[state.selectedTab];
+    final item = _DashboardShellBody.destinations[state.selectedTab];
     return DashboardPlaceholder(
       key: ValueKey('placeholder_${state.selectedTab}'),
       title: item.label,
@@ -157,7 +184,7 @@ class _ZenBottomNavigation extends StatelessWidget {
   Widget build(BuildContext context) {
     final zen = context.zenColors;
     final isIos = defaultTargetPlatform == TargetPlatform.iOS;
-    final totalTabs = _DashboardShellBody._destinations.length;
+    final totalTabs = _DashboardShellBody.destinations.length;
 
     return SafeArea(
       top: false,
@@ -237,7 +264,7 @@ class _ZenBottomNavigation extends StatelessWidget {
                     Row(
                       children: List.generate(totalTabs, (index) {
                         final destination =
-                            _DashboardShellBody._destinations[index];
+                            _DashboardShellBody.destinations[index];
                         final isSelected = selectedIndex == index;
 
                         return Expanded(

@@ -8,6 +8,7 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/zenflow_theme.dart';
 import '../../../core/widgets/zen_card.dart';
 import '../../profile/bloc/profile_bloc.dart';
+import '../../profile/bloc/profile_event.dart';
 import '../bloc/expenses_bloc.dart';
 import '../bloc/expenses_event.dart';
 import '../bloc/expenses_state.dart';
@@ -68,6 +69,7 @@ class ExpensesScreen extends StatelessWidget {
                 color: zen.accent,
                 backgroundColor: zen.card,
                 onRefresh: () async {
+                  context.read<ProfileBloc>().add(const LoadProfileEvent());
                   context.read<ExpensesBloc>().add(FetchExpenses());
                   await Future.delayed(const Duration(milliseconds: 650));
                 },

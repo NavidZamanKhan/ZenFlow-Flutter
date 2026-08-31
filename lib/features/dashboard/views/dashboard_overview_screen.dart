@@ -8,7 +8,10 @@ import '../../../core/theme/zenflow_theme.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../../auth/bloc/auth_state.dart';
 import '../../auth/models/user_model.dart';
+import '../../expenses/bloc/expenses_bloc.dart';
+import '../../expenses/bloc/expenses_event.dart';
 import '../../profile/bloc/profile_bloc.dart';
+import '../../profile/bloc/profile_event.dart';
 import '../bloc/dashboard_bloc.dart';
 import '../bloc/dashboard_event.dart';
 import '../bloc/dashboard_state.dart';
@@ -102,6 +105,8 @@ class DashboardOverviewScreen extends StatelessWidget {
   Future<void> _refresh(BuildContext context) async {
     final bloc = context.read<DashboardBloc>();
     bloc.add(const DashboardLoadRequested());
+    context.read<ProfileBloc>().add(const LoadProfileEvent());
+    context.read<ExpensesBloc>().add(FetchExpenses());
     await bloc.stream.firstWhere(
       (state) => state.status != DashboardStatus.loading,
     );

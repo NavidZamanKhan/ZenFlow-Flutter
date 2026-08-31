@@ -43,50 +43,52 @@ class ProfileService {
       }
     } catch (_) {}
 
+    String activeCurrency = localProfile?.currency ?? 'BDT';
+    String fullName = localProfile?.fullName ?? 'Navid';
+    String email = localProfile?.email ?? 'navid@zenflow.app';
+    String username = localProfile?.username ?? 'navid';
+    bool hasPassword = localProfile?.hasPassword ?? true;
+
+    // 1. Fetch user profile from /api/me/
     try {
       final meResponse = await _apiClient.dio.get(ApiEndpoints.me);
       if (meResponse.statusCode == 200 && meResponse.data != null) {
         final data = meResponse.data as Map<String, dynamic>;
-        final fullName = data['full_name'] ?? data['fullName'] ?? 'Navid';
-        final email = data['email'] ?? '';
-        final username = email.contains('@') ? email.split('@').first : 'user';
-        final hasPassword = data['has_password'] != false;
-
-        // Fetch cloud budget currency to stay 100% in sync across all devices
-        String activeCurrency = localProfile?.currency ?? 'BDT';
-        try {
-          final budgetResponse = await _apiClient.dio.get(ApiEndpoints.budget);
-          if (budgetResponse.data is Map) {
-            final bData = budgetResponse.data as Map;
-            if (bData['currency'] != null &&
-                bData['currency'].toString().isNotEmpty) {
-              activeCurrency = bData['currency'].toString();
-            }
-          }
-        } catch (_) {}
-
-        final merged = (localProfile ??
-                UserProfile(
-                  fullName: fullName,
-                  username: username,
-                  email: email,
-                ))
-            .copyWith(
-          fullName: fullName,
-          username: username,
-          email: email,
-          currency: activeCurrency,
-          hasPassword: hasPassword,
-        );
-
-        await saveLocalProfile(merged);
-        return merged;
+        fullName = data['full_name'] ?? data['fullName'] ?? fullName;
+        email = data['email'] ?? email;
+        username = email.contains('@') ? email.split('@').first : username;
+        hasPassword = data['has_password'] != false;
       }
-    } on DioException {
-      // Return cached local profile if server unavailable
-    }
+    } catch (_) {}
 
-    return localProfile;
+    // 2. Fetch cloud budget currency independently to guarantee 100% real-time sync across devices
+    try {
+      final budgetResponse = await _apiClient.dio.get(ApiEndpoints.budget);
+      if (budgetResponse.statusCode == 200 && budgetResponse.data is Map) {
+        final bData = budgetResponse.data as Map;
+        final cloudCur = bData['currency']?.toString();
+        if (cloudCur != null && cloudCur.isNotEmpty) {
+          activeCurrency = cloudCur;
+        }
+      }
+    } catch (_) {}
+
+    final merged = (localProfile ??
+            UserProfile(
+              fullName: fullName,
+              username: username,
+              email: email,
+            ))
+        .copyWith(
+      fullName: fullName,
+      username: username,
+      email: email,
+      currency: activeCurrency,
+      hasPassword: hasPassword,
+    );
+
+    await saveLocalProfile(merged);
+    return merged;
   }
 
   Future<void> saveLocalProfile(UserProfile profile) async {

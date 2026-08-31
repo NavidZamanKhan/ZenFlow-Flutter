@@ -7,51 +7,13 @@ import '../../../core/theme/zenflow_theme.dart';
 import '../../../core/widgets/zen_button.dart';
 import '../../../core/widgets/zen_card.dart';
 import 'change_password_bottom_sheet.dart';
+import 'delete_account_bottom_sheet.dart';
 
 class SettingsSecurityCard extends StatelessWidget {
   const SettingsSecurityCard({super.key});
 
   void _showDeleteAccountDialog(BuildContext context) {
-    final zen = context.zenColors;
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: zen.card,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            Icon(LucideIcons.triangle_alert, color: AppColors.danger, size: 20),
-            const SizedBox(width: 8),
-            Text('Delete Account', style: AppTextStyles.headingMedium(zen.textPrimary)),
-          ],
-        ),
-        content: Text(
-          'This action is irreversible. All your tasks, calendar events, expenses, and workspace data will be permanently deleted.',
-          style: AppTextStyles.bodyMedium(zen.textSecondary),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text('Cancel', style: AppTextStyles.labelMedium(zen.textMuted)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.danger,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Account deletion requested')),
-              );
-            },
-            child: const Text('Delete permanently'),
-          ),
-        ],
-      ),
-    );
+    DeleteAccountBottomSheet.show(context);
   }
 
   @override

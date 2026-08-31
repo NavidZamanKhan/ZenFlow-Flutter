@@ -1,15 +1,22 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../tasks/models/task_item.dart';
+import '../../tasks/services/tasks_service.dart';
+import '../models/calendar_item.dart';
 import '../services/calendar_service.dart';
 import 'calendar_event.dart';
 import 'calendar_state.dart';
 
 class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
-  final CalendarService _service;
+  final CalendarService _calendarService;
+  final TasksService _tasksService;
 
-  CalendarBloc({CalendarService? service})
-      : _service = service ?? CalendarService(),
-        super(CalendarState.initial()) {
+  CalendarBloc({
+    CalendarService? calendarService,
+    TasksService? tasksService,
+  })  : _calendarService = calendarService ?? CalendarService(),
+        _tasksService = tasksService ?? TasksService(),
+        super(_initialState()) {
     on<LoadCalendarEvent>(_onLoadCalendar);
     on<SelectDateEvent>(_onSelectDate);
     on<ChangeViewModeEvent>(_onChangeViewMode);
@@ -29,11 +36,41 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
   ) async {
     emit(state.copyWith(status: CalendarStatus.loading));
     try {
-      final events = await _service.getEvents();
-      emit(state.copyWith(
-        items: events,
-        status: CalendarStatus.success,
-      ));
+      final eventsFuture = _calendarService.getEvents();
+      final tasksFuture = _tasksService.getTasks();
+
+      final results = await Future.wait([eventsFuture, tasksFuture]);
+      final remoteEvents = results[0] as List<CalendarItem>;
+      final remoteTasks = results[1] as List<TaskItem>;
+
+      final mergedItems = <CalendarItem>[...remoteEvents];
+
+      // Convert tasks with due dates into calendar deadline items (Green dots)
+      for (final task in remoteTasks) {
+        if (task.dueDate != null) {
+          mergedItems.add(
+            CalendarItem(
+              id: 'task_${task.id}',
+              title: task.title,
+              description: task.description,
+              startDateTime: task.dueDate!,
+              isAllDay: task.dueTime == null,
+              type: CalendarItemType.taskDeadline,
+              isCompleted: task.isCompleted,
+              category: task.category.isNotEmpty ? task.category : 'Task',
+            ),
+          );
+        }
+      }
+
+      if (mergedItems.isNotEmpty) {
+        emit(state.copyWith(
+          items: mergedItems,
+          status: CalendarStatus.success,
+        ));
+      } else {
+        emit(state.copyWith(status: CalendarStatus.success));
+      }
     } catch (_) {
       emit(state.copyWith(status: CalendarStatus.success));
     }
@@ -85,7 +122,7 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
     emit(state.copyWith(items: [event.item, ...state.items]));
 
     try {
-      final created = await _service.createEvent(event.item);
+      final created = await _calendarService.createEvent(event.item);
       final updated = state.items
           .map((i) => i.id == event.item.id ? created : i)
           .toList();
@@ -118,9 +155,70 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
     emit(state.copyWith(items: updated));
 
     try {
-      await _service.deleteEvent(event.itemId);
+      await _calendarService.deleteEvent(event.itemId);
     } catch (_) {
       emit(state.copyWith(items: previousItems));
     }
+  }
+
+  static CalendarState _initialState() {
+    final now = DateTime.now();
+    final year = now.year;
+    final month = now.month;
+
+    return CalendarState(
+      selectedDate: now,
+      focusedMonth: DateTime(year, month, 1),
+      viewMode: CalendarViewMode.month,
+      items: [
+        CalendarItem(
+          id: '1',
+          title: 'Team Daily Standup',
+          description: 'Sync on sprint deliverables and unblock team members',
+          startDateTime: DateTime(year, month, now.day, 9, 30),
+          endDateTime: DateTime(year, month, now.day, 10, 0),
+          type: CalendarItemType.event,
+          category: 'Work',
+        ),
+        CalendarItem(
+          id: '2',
+          title: 'Design System Review',
+          description: 'Audit mobile UI components and tokens parity',
+          startDateTime: DateTime(year, month, now.day, 11, 0),
+          endDateTime: DateTime(year, month, now.day, 12, 30),
+          type: CalendarItemType.event,
+          category: 'Design',
+        ),
+        CalendarItem(
+          id: '3',
+          title: 'Quarterly Roadmap Planning',
+          description: 'Finalize Q4 milestones and engineering scope',
+          startDateTime: DateTime(year, month, now.day),
+          isAllDay: true,
+          type: CalendarItemType.taskDeadline,
+          isCompleted: false,
+          category: 'Planning',
+        ),
+        CalendarItem(
+          id: '4',
+          title: 'Client Architecture Demo',
+          description: 'Live mobile & web cloud deployment walkthrough',
+          startDateTime: DateTime(year, month, now.day, 14, 0),
+          endDateTime: DateTime(year, month, now.day, 15, 0),
+          type: CalendarItemType.event,
+          category: 'Work',
+        ),
+        CalendarItem(
+          id: '5',
+          title: 'Budget Review & Financial Audit',
+          description: 'Review monthly cloud spending and thresholds',
+          startDateTime: DateTime(year, month, now.day, 16, 0),
+          endDateTime: DateTime(year, month, now.day, 16, 45),
+          type: CalendarItemType.event,
+          category: 'Finance',
+        ),
+      ],
+      status: CalendarStatus.initial,
+    );
   }
 }

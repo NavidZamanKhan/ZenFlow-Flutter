@@ -15,6 +15,8 @@ class ApiEndpoints {
   static const String setPassword = '/api/auth/password/set/';
   static const String passwordOtp = '/api/auth/password/otp/';
   static const String passwordReset = '/api/auth/password/reset/';
+  static const String deleteAccountOtp = '/api/auth/delete-account/otp/';
+  static const String deleteAccount = '/api/auth/delete-account/';
 
   // Workspace endpoints
   static const String tasks = '/api/tasks/';

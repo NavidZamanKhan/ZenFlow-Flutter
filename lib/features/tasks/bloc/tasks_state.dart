@@ -22,10 +22,69 @@ class TasksState extends Equatable {
     this.errorMessage,
   });
 
-  factory TasksState.initial() => const TasksState(
-        tasks: [],
-        status: TasksStatus.initial,
-      );
+  factory TasksState.initial() {
+    final now = DateTime.now();
+    return TasksState(
+      tasks: [
+        TaskItem(
+          id: '1',
+          title: 'Finish ZenFlow Flutter App Design',
+          description: 'Audit mobile UI components, tokens, and 120 FPS animations',
+          dueDate: DateTime(now.year, now.month, now.day),
+          dueTime: '5:00 PM',
+          priority: TaskPriority.high,
+          category: 'Work',
+          isCompleted: false,
+          createdAt: now,
+        ),
+        TaskItem(
+          id: '2',
+          title: 'Quarterly Roadmap Planning',
+          description: 'Finalize Q4 milestones and engineering scope with team',
+          dueDate: DateTime(now.year, now.month, now.day),
+          dueTime: '6:30 PM',
+          priority: TaskPriority.high,
+          category: 'Planning',
+          isCompleted: false,
+          createdAt: now,
+        ),
+        TaskItem(
+          id: '3',
+          title: 'Review Monthly Budget & Spending',
+          description: 'Track category spending and adjust threshold warnings',
+          dueDate: DateTime(now.year, now.month, now.day),
+          dueTime: '8:00 PM',
+          priority: TaskPriority.medium,
+          category: 'Finance',
+          isCompleted: true,
+          createdAt: now,
+        ),
+        TaskItem(
+          id: '4',
+          title: 'Team Sync & Sprint Retro',
+          description: 'Review previous sprint velocity and action items',
+          dueDate: DateTime(now.year, now.month, now.day),
+          dueTime: '10:00 AM',
+          priority: TaskPriority.medium,
+          category: 'Meetings',
+          isCompleted: true,
+          createdAt: now,
+        ),
+        TaskItem(
+          id: '5',
+          title: 'Client Architecture Walkthrough',
+          description: 'Demo mobile live sync with Django REST backend',
+          dueDate: DateTime(now.year, now.month, now.day),
+          dueTime: '2:00 PM',
+          priority: TaskPriority.low,
+          category: 'Work',
+          isCompleted: false,
+          createdAt: now,
+        ),
+      ],
+      status: TasksStatus.initial,
+    );
+  }
 
   List<TaskItem> get filteredTasks {
     return tasks.where((task) {

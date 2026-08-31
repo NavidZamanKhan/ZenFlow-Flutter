@@ -29,10 +29,14 @@ class TasksBloc extends Bloc<TasksEvent, TasksState> {
     emit(state.copyWith(status: TasksStatus.loading));
     try {
       final tasks = await _service.getTasks();
-      emit(state.copyWith(
-        tasks: tasks,
-        status: TasksStatus.success,
-      ));
+      if (tasks.isNotEmpty) {
+        emit(state.copyWith(
+          tasks: tasks,
+          status: TasksStatus.success,
+        ));
+      } else {
+        emit(state.copyWith(status: TasksStatus.success));
+      }
     } catch (_) {
       // Keep existing state if offline
       emit(state.copyWith(status: TasksStatus.success));

@@ -1,36 +1,40 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/zenflow_theme.dart';
-import '../../../core/widgets/zen_button.dart';
 import '../../../core/widgets/zen_text_field.dart';
+import '../../auth/bloc/auth_bloc.dart';
+import '../../auth/bloc/auth_event.dart';
 import '../../auth/repositories/auth_repository.dart';
 
-class ChangePasswordBottomSheet extends StatefulWidget {
-  const ChangePasswordBottomSheet({super.key});
+class DeleteAccountBottomSheet extends StatefulWidget {
+  const DeleteAccountBottomSheet({super.key});
 
   static Future<void> show(BuildContext context) {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => const ChangePasswordBottomSheet(),
+      builder: (_) => BlocProvider.value(
+        value: context.read<AuthBloc>(),
+        child: const DeleteAccountBottomSheet(),
+      ),
     );
   }
 
   @override
-  State<ChangePasswordBottomSheet> createState() =>
-      _ChangePasswordBottomSheetState();
+  State<DeleteAccountBottomSheet> createState() =>
+      _DeleteAccountBottomSheetState();
 }
 
-class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
+class _DeleteAccountBottomSheetState extends State<DeleteAccountBottomSheet> {
   final _authRepo = AuthRepository();
 
   final _otpController = TextEditingController();
-  final _newPasswordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
+  final _passwordController = TextEditingController();
 
   bool _isLoading = false;
   String? _errorMessage;
@@ -44,8 +48,7 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
   @override
   void dispose() {
     _otpController.dispose();
-    _newPasswordController.dispose();
-    _confirmPasswordController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
@@ -56,7 +59,7 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
     });
 
     try {
-      await _authRepo.sendPasswordResetOtp();
+      await _authRepo.sendDeleteAccountOtp();
       setState(() => _isLoading = false);
     } catch (e) {
       setState(() {
@@ -68,19 +71,8 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
 
   Future<void> _submit() async {
     final otp = _otpController.text.trim();
-    final newPassword = _newPasswordController.text;
-    final confirm = _confirmPasswordController.text;
-
     if (otp.length < 6) {
-      setState(() => _errorMessage = 'Please enter the 6-digit OTP.');
-      return;
-    }
-    if (newPassword.length < 8) {
-      setState(() => _errorMessage = 'Password must be at least 8 characters.');
-      return;
-    }
-    if (newPassword != confirm) {
-      setState(() => _errorMessage = 'Passwords do not match.');
+      setState(() => _errorMessage = 'Please enter the 6-digit OTP code.');
       return;
     }
 
@@ -90,19 +82,16 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
     });
 
     try {
-      await _authRepo.changePasswordWithOtp(
+      await _authRepo.deleteAccount(
         otp: otp,
-        newPassword: newPassword,
+        password: _passwordController.text.isNotEmpty
+            ? _passwordController.text
+            : null,
       );
 
       if (mounted) {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Password updated successfully!'),
-            backgroundColor: AppColors.success,
-          ),
-        );
+        context.read<AuthBloc>().add(LogoutRequestedEvent());
       }
     } catch (e) {
       setState(() {
@@ -147,12 +136,18 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
             const SizedBox(height: 14),
 
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Change password',
-                  style: AppTextStyles.headingLarge(zen.textPrimary),
+                Icon(
+                  LucideIcons.triangle_alert,
+                  color: AppColors.danger,
+                  size: 22,
                 ),
+                const SizedBox(width: 8),
+                Text(
+                  'Delete Account',
+                  style: AppTextStyles.headingLarge(AppColors.danger),
+                ),
+                const Spacer(),
                 GestureDetector(
                   onTap: () => Navigator.of(context).pop(),
                   child: Container(
@@ -169,7 +164,7 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
             const SizedBox(height: 8),
 
             Text(
-              'A 6-digit verification code has been sent to your registered email.',
+              'A 6-digit confirmation code has been sent to your email. This action is permanent and cannot be undone.',
               style: AppTextStyles.bodySmall(zen.textSecondary),
             ),
             const SizedBox(height: 16),
@@ -213,33 +208,28 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
               controller: _otpController,
               hintText: 'Enter 6-digit code',
               keyboardType: TextInputType.number,
-              prefixIcon: Icon(LucideIcons.mail, size: 18, color: zen.accent),
+              prefixIcon: Icon(
+                LucideIcons.mail,
+                size: 18,
+                color: AppColors.danger,
+              ),
             ),
             const SizedBox(height: 14),
 
             Text(
-              'New password',
+              'Account Password (optional for Google accounts)',
               style: AppTextStyles.labelMedium(zen.textPrimary),
             ),
             const SizedBox(height: 6),
             ZenTextField(
-              controller: _newPasswordController,
-              hintText: 'Enter new password (min 8 characters)',
+              controller: _passwordController,
+              hintText: 'Enter password',
               obscureText: true,
-              prefixIcon: Icon(LucideIcons.lock, size: 18, color: zen.accent),
-            ),
-            const SizedBox(height: 14),
-
-            Text(
-              'Confirm new password',
-              style: AppTextStyles.labelMedium(zen.textPrimary),
-            ),
-            const SizedBox(height: 6),
-            ZenTextField(
-              controller: _confirmPasswordController,
-              hintText: 'Confirm new password',
-              obscureText: true,
-              prefixIcon: Icon(LucideIcons.lock, size: 18, color: zen.accent),
+              prefixIcon: Icon(
+                LucideIcons.lock,
+                size: 18,
+                color: AppColors.danger,
+              ),
             ),
             const SizedBox(height: 24),
 
@@ -254,11 +244,20 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                ZenButton(
-                  label: _isLoading ? 'Updating...' : 'Update Password',
-                  height: 42,
-                  width: 155,
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.danger,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(160, 42),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                   onPressed: _isLoading ? null : _submit,
+                  child: Text(
+                    _isLoading ? 'Deleting...' : 'Delete Permanently',
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
                 ),
               ],
             ),

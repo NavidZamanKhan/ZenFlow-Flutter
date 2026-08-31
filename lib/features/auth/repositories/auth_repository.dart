@@ -196,6 +196,72 @@ class AuthRepository {
     }
   }
 
+  /// Sends 6-digit password reset OTP to authenticated user's email
+  Future<String> sendPasswordResetOtp() async {
+    try {
+      final response = await _apiClient.dio.post(ApiEndpoints.passwordOtp);
+      return response.data?['message']?.toString() ??
+          'Verification code sent to your email.';
+    } on DioException catch (e) {
+      throw Exception(
+        _extractErrorMessage(e, 'Failed to send password reset code.'),
+      );
+    }
+  }
+
+  /// Verifies OTP and resets user password
+  Future<String> changePasswordWithOtp({
+    required String otp,
+    required String newPassword,
+  }) async {
+    try {
+      final response = await _apiClient.dio.post(
+        ApiEndpoints.passwordReset,
+        data: {
+          'otp': otp.trim(),
+          'new_password': newPassword,
+        },
+      );
+      return response.data?['message']?.toString() ??
+          'Password updated successfully.';
+    } on DioException catch (e) {
+      throw Exception(_extractErrorMessage(e, 'Failed to update password.'));
+    }
+  }
+
+  /// Sends 6-digit account deletion confirmation OTP to user's email
+  Future<String> sendDeleteAccountOtp() async {
+    try {
+      final response = await _apiClient.dio.post(ApiEndpoints.deleteAccountOtp);
+      return response.data?['message']?.toString() ??
+          'Verification code sent to your email.';
+    } on DioException catch (e) {
+      throw Exception(
+        _extractErrorMessage(e, 'Failed to send account deletion code.'),
+      );
+    }
+  }
+
+  /// Verifies OTP and password, then permanently deletes user account
+  Future<void> deleteAccount({
+    required String otp,
+    String? password,
+  }) async {
+    try {
+      await _apiClient.dio.post(
+        ApiEndpoints.deleteAccount,
+        data: {
+          'otp': otp.trim(),
+          if (password != null && password.isNotEmpty) 'password': password,
+        },
+      );
+    } on DioException catch (e) {
+      throw Exception(_extractErrorMessage(e, 'Failed to delete account.'));
+    } finally {
+      await logout();
+    }
+  }
+
   /// Helper to extract clean user-friendly error messages from Django responses
   String _extractErrorMessage(DioException e, String defaultMessage) {
     if (e.response?.data != null) {

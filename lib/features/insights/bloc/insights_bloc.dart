@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/services/currency_service.dart';
 import '../../../core/theme/app_colors.dart';
@@ -15,8 +16,10 @@ class InsightsBloc extends Bloc<InsightsEvent, InsightsState> {
   final ExpensesService _expensesService;
   final CurrencyService _currencyService;
 
-  InsightsBloc({ExpensesService? expensesService, CurrencyService? currencyService})
-      : _expensesService = expensesService ?? ExpensesService(),
+  InsightsBloc({
+    ExpensesService? expensesService,
+    CurrencyService? currencyService,
+  })  : _expensesService = expensesService ?? ExpensesService(),
         _currencyService = currencyService ?? CurrencyService(),
         super(InsightsState.initial()) {
     on<LoadInsightsEvent>(_onLoad);
@@ -49,7 +52,7 @@ class InsightsBloc extends Bloc<InsightsEvent, InsightsState> {
     await _computeAndEmitInsights(emit, event.timeRange, event.activeCurrency);
   }
 
-  /// Convert an expense amount from its stored currency to the active display currency.
+  /// Converts an amount from its recorded currency to the active display currency.
   double _convert(double amount, String fromCurrency, String toCurrency) {
     if (fromCurrency == toCurrency || amount == 0) return amount;
     return _currencyService.convertAmount(
@@ -68,35 +71,43 @@ class InsightsBloc extends Bloc<InsightsEvent, InsightsState> {
       final allExpenses = await _expensesService.getExpenses();
       final budgets = await _expensesService.getBudget(allExpenses);
 
-      final now = DateTime.now();
-      final filteredExpenses = allExpenses.where((exp) {
-        switch (range) {
-          case InsightsTimeRange.thisMonth:
-            return exp.date.year == now.year && exp.date.month == now.month;
-          case InsightsTimeRange.last30Days:
-            return exp.date.isAfter(now.subtract(const Duration(days: 30)));
-          case InsightsTimeRange.allTime:
-            return true;
-        }
-      }).toList();
-
-      if (filteredExpenses.isEmpty && allExpenses.isEmpty) {
+      if (allExpenses.isEmpty) {
         emit(state.copyWith(status: InsightsStatus.success));
         return;
       }
 
-      final targetExpenses =
-          filteredExpenses.isNotEmpty ? filteredExpenses : allExpenses;
+      final now = DateTime.now();
 
-      // 1. Category Segments — convert each expense to active currency
-      final categoryTotals = <String, double>{};
+      // 1. Calculate Total Spending & Month Spending matching Web
       double totalSpent = 0.0;
+      final categoryTotals = <String, double>{};
+      final uniqueDates = <String>{};
 
-      for (final exp in targetExpenses) {
+      for (final exp in allExpenses) {
+        final converted = _convert(exp.amount, exp.currency, activeCurrency);
+        totalSpent += converted;
+        final dateStr = DateFormat('yyyy-MM-dd').format(exp.date);
+        uniqueDates.add(dateStr);
+      }
+
+      double spentThisMonth = 0.0;
+      final thisMonthExpenses = allExpenses.where(
+        (exp) => exp.date.year == now.year && exp.date.month == now.month,
+      );
+      for (final exp in thisMonthExpenses) {
+        spentThisMonth += _convert(exp.amount, exp.currency, activeCurrency);
+      }
+
+      // 2. Daily Average (Matches web: total spent / count of unique active spending dates)
+      final dailyAverage = uniqueDates.isNotEmpty
+          ? totalSpent / uniqueDates.length
+          : 0.0;
+
+      // 3. Category Segments (All-time mix converted)
+      for (final exp in allExpenses) {
         final converted = _convert(exp.amount, exp.currency, activeCurrency);
         categoryTotals[exp.category] =
             (categoryTotals[exp.category] ?? 0.0) + converted;
-        totalSpent += converted;
       }
 
       final categorySegments = categoryTotals.entries.map((e) {
@@ -110,9 +121,9 @@ class InsightsBloc extends Bloc<InsightsEvent, InsightsState> {
       }).toList()
         ..sort((a, b) => b.amount.compareTo(a.amount));
 
-      // 2. Payment Method Segments — convert each expense
+      // 4. Payment Method Segments (Converted)
       final paymentTotals = <String, double>{};
-      for (final exp in targetExpenses) {
+      for (final exp in allExpenses) {
         final converted = _convert(exp.amount, exp.currency, activeCurrency);
         paymentTotals[exp.paymentMethod] =
             (paymentTotals[exp.paymentMethod] ?? 0.0) + converted;
@@ -129,9 +140,9 @@ class InsightsBloc extends Bloc<InsightsEvent, InsightsState> {
       }).toList()
         ..sort((a, b) => b.amount.compareTo(a.amount));
 
-      // 3. Daily Spending Points — convert each expense
+      // 5. Daily Spending Points for current month (Converted)
       final dailyMap = <int, double>{};
-      for (final exp in targetExpenses) {
+      for (final exp in thisMonthExpenses) {
         final converted = _convert(exp.amount, exp.currency, activeCurrency);
         dailyMap[exp.date.day] = (dailyMap[exp.date.day] ?? 0.0) + converted;
       }
@@ -144,29 +155,33 @@ class InsightsBloc extends Bloc<InsightsEvent, InsightsState> {
         );
       }).toList();
 
-      // 4. Weekly Spending Breakdown — convert each expense
+      // 6. Weekly Spending Breakdown (Mon..Sun, last 7 days converted)
       final weeklyAmounts = <double>[0, 0, 0, 0, 0, 0, 0];
-      for (final exp in targetExpenses) {
+      final sevenDaysAgo = now.subtract(const Duration(days: 7));
+      final recentExpenses = allExpenses.where((e) => e.date.isAfter(sevenDaysAgo));
+      for (final exp in recentExpenses) {
         final dayOfWeek = (exp.date.weekday - 1).clamp(0, 6);
         final converted = _convert(exp.amount, exp.currency, activeCurrency);
         weeklyAmounts[dayOfWeek] += converted;
       }
 
-      // 5. Total Budget & Remaining — convert budget from its currency
-      final budgetCurrency = budgets.isNotEmpty ? budgets.first.currency : 'BDT';
-      double totalBudget = 0.0;
+      // 7. Total Budget & Remaining (Converted from budget's base currency)
+      final budgetCurrency =
+          budgets.isNotEmpty ? budgets.first.currency : 'BDT';
+      double rawBudgetTotal = 0.0;
       for (final b in budgets) {
-        totalBudget += b.budgetAmount;
+        rawBudgetTotal += b.budgetAmount;
       }
-      if (totalBudget == 0) totalBudget = 40000.0;
+      if (rawBudgetTotal == 0) rawBudgetTotal = 40000.0;
 
-      final convertedBudget = _convert(totalBudget, budgetCurrency, activeCurrency);
-      final remaining = (convertedBudget - totalSpent).clamp(0.0, double.infinity);
+      final convertedBudget =
+          _convert(rawBudgetTotal, budgetCurrency, activeCurrency);
+      final remaining =
+          (convertedBudget - spentThisMonth).clamp(0.0, double.infinity);
       final budgetUtilization =
-          convertedBudget > 0 ? (totalSpent / convertedBudget) * 100 : 0.0;
-      final dailyAverage = totalSpent / (DateTime.now().day.clamp(1, 31));
+          convertedBudget > 0 ? (spentThisMonth / convertedBudget) * 100 : 0.0;
 
-      // 6. Smart Analytics & Trends
+      // 8. Smart Analytics & Trends
       final topCategory = categorySegments.isNotEmpty
           ? categorySegments.first.label
           : 'Bills';
@@ -215,9 +230,9 @@ class InsightsBloc extends Bloc<InsightsEvent, InsightsState> {
 
       emit(state.copyWith(
         totalSpending: totalSpent,
-        spentThisMonth: totalSpent,
+        spentThisMonth: spentThisMonth,
         dailyAverage: dailyAverage,
-        totalTransactions: targetExpenses.length,
+        totalTransactions: allExpenses.length,
         categorySegments: categorySegments,
         paymentSegments: paymentSegments,
         dailyPoints: dailyPoints.isNotEmpty ? dailyPoints : state.dailyPoints,

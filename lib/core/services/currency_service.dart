@@ -106,14 +106,17 @@ class CurrencyService {
 
   static const Map<String, double> fallbackRatesUsdBase = {
     'USD': 1.0,
-    'BDT': 123.18,
-    'EUR': 0.92,
+    'BDT': 123.27,
+    'EUR': 0.8623,
     'GBP': 0.79,
     'INR': 86.50,
     'JPY': 154.20,
     'CAD': 1.38,
-    'AUD': 1.52,
+    'AUD': 1.3959,
   };
+
+  /// In-memory active live exchange rates shared globally across the entire app
+  static Map<String, double> liveRates = Map<String, double>.from(fallbackRatesUsdBase);
 
   Future<ExchangeRatesData> fetchExchangeRates({bool forceRefresh = false}) async {
     if (!forceRefresh) {
@@ -129,6 +132,7 @@ class CurrencyService {
               final rates = rawRates.map(
                 (k, v) => MapEntry(k, (v as num).toDouble()),
               );
+              liveRates = rates;
               return ExchangeRatesData(
                 base: 'USD',
                 rates: rates,
@@ -158,7 +162,7 @@ class CurrencyService {
 
         final rawRates = data['rates'] as Map<String, dynamic>?;
         if (rawRates != null) {
-          final liveRates = <String, double>{
+          final updatedRates = <String, double>{
             'USD': 1.0,
             'BDT': (rawRates['BDT'] as num?)?.toDouble() ??
                 fallbackRatesUsdBase['BDT']!,
@@ -176,6 +180,7 @@ class CurrencyService {
                 fallbackRatesUsdBase['AUD']!,
           };
 
+          liveRates = updatedRates;
           final now = DateTime.now();
           final timeStr = DateFormat('hh:mm a').format(now);
 
@@ -184,13 +189,13 @@ class CurrencyService {
             value: jsonEncode({
               'timestamp': now.toIso8601String(),
               'lastUpdated': timeStr,
-              'rates': liveRates,
+              'rates': updatedRates,
             }),
           );
 
           return ExchangeRatesData(
             base: 'USD',
-            rates: liveRates,
+            rates: updatedRates,
             lastUpdated: timeStr,
             isLive: true,
           );
@@ -200,12 +205,14 @@ class CurrencyService {
 
     return ExchangeRatesData(
       base: 'USD',
-      rates: fallbackRatesUsdBase,
+      rates: liveRates,
       lastUpdated: DateFormat('hh:mm a').format(DateTime.now()),
       isLive: false,
     );
   }
 
+  /// Converts an amount from one currency to another using exchange rates.
+  /// Zero-drift guarantee: if fromCurrency == toCurrency, returns amount directly.
   double convertAmount({
     required double amount,
     required String toCurrency,
@@ -213,11 +220,45 @@ class CurrencyService {
     Map<String, double>? rates,
   }) {
     if (fromCurrency == toCurrency || amount == 0) return amount;
-    final r = rates ?? fallbackRatesUsdBase;
+    final r = rates ?? liveRates;
     final fromRate = r[fromCurrency] ?? 1.0;
     final toRate = r[toCurrency] ?? 1.0;
     final inUsd = amount / fromRate;
-    return inUsd * toRate;
+    final rawConverted = inUsd * toRate;
+    return smartConvertCurrency(rawConverted, toCurrency: toCurrency);
+  }
+
+  /// Smart currency conversion that eliminates two-way floating point rounding drift
+  /// (e.g. 25,000 -> $205.76 -> 24,999.74 snaps cleanly back to 25,000), matching the web.
+  static double smartConvertCurrency(
+    double rawConverted, {
+    String? toCurrency,
+  }) {
+    if (rawConverted == 0 || rawConverted.isNaN || rawConverted.isInfinite) {
+      return 0.0;
+    }
+    final rounded2Dec = (rawConverted * 100).round() / 100.0;
+
+    // 1. Direct whole integer snapping (if within 0.35 of a round integer)
+    final nearestInt = rounded2Dec.roundToDouble();
+    if ((rounded2Dec - nearestInt).abs() < 0.35) {
+      return nearestInt;
+    }
+
+    // 2. Step snapping for currencies with larger denominations (BDT, JPY, INR)
+    if (toCurrency == 'BDT' || toCurrency == 'JPY' || toCurrency == 'INR') {
+      const steps = [10000, 5000, 1000, 500, 100, 50, 10, 5];
+      for (final step in steps) {
+        final nearestStep = (rounded2Dec / step).roundToDouble() * step;
+        final diff = (rounded2Dec - nearestStep).abs();
+        final threshold = (step * 0.005) < 1.8 ? (step * 0.005) : 1.8;
+        if (diff < threshold) {
+          return nearestStep;
+        }
+      }
+    }
+
+    return rounded2Dec;
   }
 
   String formatMoney({

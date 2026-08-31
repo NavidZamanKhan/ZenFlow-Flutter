@@ -73,5 +73,6 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     ));
 
     await _service.saveLocalProfile(updated);
+    _service.syncCurrencyToCloud(event.currency);
   }
 }

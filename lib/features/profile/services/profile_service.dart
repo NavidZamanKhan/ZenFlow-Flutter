@@ -43,22 +43,39 @@ class ProfileService {
     } catch (_) {}
 
     try {
-      final response = await _apiClient.dio.get(ApiEndpoints.me);
-      if (response.statusCode == 200 && response.data != null) {
-        final data = response.data as Map<String, dynamic>;
+      final meResponse = await _apiClient.dio.get(ApiEndpoints.me);
+      if (meResponse.statusCode == 200 && meResponse.data != null) {
+        final data = meResponse.data as Map<String, dynamic>;
         final fullName = data['full_name'] ?? data['fullName'] ?? 'Navid';
         final email = data['email'] ?? '';
         final username = email.contains('@') ? email.split('@').first : 'user';
         final hasPassword = data['has_password'] != false;
 
-        final merged = (localProfile ?? UserProfile(
+        // Also fetch cloud budget currency to stay 100% in sync
+        String activeCurrency = localProfile?.currency ?? 'BDT';
+        try {
+          final budgetResponse =
+              await _apiClient.dio.get(ApiEndpoints.budget);
+          if (budgetResponse.data is Map) {
+            final bData = budgetResponse.data as Map;
+            if (bData['currency'] != null &&
+                bData['currency'].toString().isNotEmpty) {
+              activeCurrency = bData['currency'].toString();
+            }
+          }
+        } catch (_) {}
+
+        final merged = (localProfile ??
+                UserProfile(
+                  fullName: fullName,
+                  username: username,
+                  email: email,
+                ))
+            .copyWith(
           fullName: fullName,
           username: username,
           email: email,
-        )).copyWith(
-          fullName: fullName,
-          username: username,
-          email: email,
+          currency: activeCurrency,
           hasPassword: hasPassword,
         );
 
@@ -93,6 +110,15 @@ class ProfileService {
           'displayDensity': profile.displayDensity,
           'hasPassword': profile.hasPassword,
         }),
+      );
+    } catch (_) {}
+  }
+
+  Future<void> syncCurrencyToCloud(String currency) async {
+    try {
+      await _apiClient.dio.put(
+        ApiEndpoints.budget,
+        data: {'currency': currency},
       );
     } catch (_) {}
   }

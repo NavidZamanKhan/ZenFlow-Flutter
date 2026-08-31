@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/services/currency_service.dart';
 import '../../dashboard/models/dashboard_budget.dart';
 import '../../dashboard/models/dashboard_event.dart';
 import '../../dashboard/models/dashboard_expense.dart';
@@ -190,11 +191,11 @@ class NotificationsEngine {
 
     if (budget.monthlyTotal > 0) {
       final ratio = totalSpent / budget.monthlyTotal;
-      final currency = budget.currency == 'BDT' ? '৳' : budget.currency;
+      final curService = CurrencyService();
       final formattedSpent =
-          '$currency${NumberFormat('#,##0').format(totalSpent)}';
+          curService.formatMoney(amount: totalSpent, currency: budget.currency);
       final formattedBudget =
-          '$currency${NumberFormat('#,##0').format(budget.monthlyTotal)}';
+          curService.formatMoney(amount: budget.monthlyTotal, currency: budget.currency);
 
       if (ratio >= 1.0) {
         final id = 'notif-budget-total-100-$currentMonthStr';

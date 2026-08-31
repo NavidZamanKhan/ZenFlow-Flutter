@@ -2,8 +2,8 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
 
+import '../../../core/services/currency_service.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/zenflow_theme.dart';
 import '../../../core/widgets/zen_card.dart';
@@ -13,12 +13,14 @@ class AnimatedDonutChart extends StatefulWidget {
   final String title;
   final String subtitle;
   final List<ChartSegment> segments;
+  final String currency;
 
   const AnimatedDonutChart({
     super.key,
     required this.title,
     required this.subtitle,
     required this.segments,
+    this.currency = 'BDT',
   });
 
   @override
@@ -71,8 +73,14 @@ class _AnimatedDonutChartState extends State<AnimatedDonutChart>
             : null;
 
     final centerValueStr = selectedSegment != null
-        ? '৳${NumberFormat('#,##0').format(selectedSegment.amount)}'
-        : '৳${NumberFormat('#,##0').format(totalAmount)}';
+        ? CurrencyService().formatMoney(
+            amount: selectedSegment.amount,
+            currency: widget.currency,
+          )
+        : CurrencyService().formatMoney(
+            amount: totalAmount,
+            currency: widget.currency,
+          );
 
     final centerLabelStr =
         selectedSegment != null ? selectedSegment.label : 'Total';

@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
-import 'package:intl/intl.dart';
 
+import '../../../core/services/currency_service.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/zenflow_theme.dart';
 import '../../../core/widgets/zen_card.dart';
+import '../../profile/bloc/profile_bloc.dart';
 import '../bloc/expenses_bloc.dart';
 import '../bloc/expenses_event.dart';
 import '../bloc/expenses_state.dart';
@@ -59,44 +60,53 @@ class ExpensesScreen extends StatelessWidget {
       child: ColoredBox(
         color: zen.canvas,
         child: SafeArea(
-          child: BlocBuilder<ExpensesBloc, ExpensesState>(
-            builder: (context, state) {
-              return RefreshIndicator(
-                color: zen.accent,
-                backgroundColor: zen.card,
-                onRefresh: () async {
-                  context.read<ExpensesBloc>().add(const FetchExpenses());
-                  await Future.delayed(const Duration(milliseconds: 650));
+          bottom: false,
+          child: Column(
+            children: [
+              ExpensesHeader(
+                onAddExpense: () {
+                  HapticFeedback.lightImpact();
+                  final currency = context.read<ProfileBloc>().state.profile.currency;
+                  NewExpenseBottomSheet.show(
+                    context,
+                    currency: currency,
+                    onCreated: (expense) {
+                      context.read<ExpensesBloc>().add(AddExpense(expense));
+                    },
+                  );
                 },
-                child: ListView(
-                  physics: const AlwaysScrollableScrollPhysics(
-                    parent: BouncingScrollPhysics(),
-                  ),
-                  keyboardDismissBehavior:
-                      ScrollViewKeyboardDismissBehavior.onDrag,
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 118),
-                  children: <Widget>[
-                    ExpensesHeader(
-                      onAddExpense: () => NewExpenseBottomSheet.show(
-                        context,
-                        onCreated: (item) =>
-                            context.read<ExpensesBloc>().add(AddExpense(item)),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    ExpensesSubtabSwitcher(
-                      selected: state.subTab,
-                      onChanged: (tab) =>
-                          context.read<ExpensesBloc>().add(SwitchSubTab(tab)),
-                    ),
-                    const SizedBox(height: 16),
-                    state.subTab == ExpensesSubTab.allExpenses
-                        ? _allExpenses(context, state)
-                        : _budget(context, state),
-                  ],
+              ),
+              const SizedBox(height: 14),
+              Expanded(
+                child: BlocBuilder<ExpensesBloc, ExpensesState>(
+                  builder: (context, state) {
+                    final isAllExpenses =
+                        state.subTab == ExpensesSubTab.allExpenses;
+                    return ListView(
+                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+                      children: [
+                        ExpensesSubtabSwitcher(
+                          selected: state.subTab,
+                          onChanged: (tab) {
+                            HapticFeedback.selectionClick();
+                            context.read<ExpensesBloc>().add(SwitchSubTab(tab));
+                          },
+                        ),
+                        const SizedBox(height: 18),
+                        AnimatedCrossFade(
+                          duration: const Duration(milliseconds: 250),
+                          crossFadeState: isAllExpenses
+                              ? CrossFadeState.showFirst
+                              : CrossFadeState.showSecond,
+                          firstChild: _allExpenses(context, state),
+                          secondChild: _budget(context, state),
+                        ),
+                      ],
+                    );
+                  },
                 ),
-              );
-            },
+              ),
+            ],
           ),
         ),
       ),
@@ -106,6 +116,10 @@ class ExpensesScreen extends StatelessWidget {
   Widget _allExpenses(BuildContext context, ExpensesState state) {
     final zen = context.zenColors;
     final expenses = state.filteredExpenses;
+    final currency = context.select<ProfileBloc, String>(
+      (bloc) => bloc.state.profile.currency,
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -115,6 +129,7 @@ class ExpensesScreen extends StatelessWidget {
           month: state.spentThisMonth,
           remaining: state.remainingBudget,
           monthlyBudget: state.monthlyTotalBudget,
+          currency: currency,
         ),
         const SizedBox(height: 20),
         SizedBox(
@@ -136,12 +151,15 @@ class ExpensesScreen extends StatelessWidget {
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 280),
                   curve: Curves.easeOutCubic,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   decoration: BoxDecoration(
                     color: active ? zen.accent : zen.subtleFill,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: active ? zen.accent : zen.border.withValues(alpha: 0.8),
+                      color: active
+                          ? zen.accent
+                          : zen.border.withValues(alpha: 0.8),
                       width: 1.0,
                     ),
                     boxShadow: active
@@ -174,7 +192,8 @@ class ExpensesScreen extends StatelessWidget {
                         style: AppTextStyles.labelSmall(
                           active ? Colors.white : zen.textPrimary,
                         ).copyWith(
-                          fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                          fontWeight:
+                              active ? FontWeight.w700 : FontWeight.w500,
                           fontSize: 12.5,
                         ),
                         child: Text(filter),
@@ -243,7 +262,10 @@ class ExpensesScreen extends StatelessWidget {
 
   Widget _budget(BuildContext context, ExpensesState state) {
     final zen = context.zenColors;
-    final money = NumberFormat('#,##0.00');
+    final currency = context.select<ProfileBloc, String>(
+      (bloc) => bloc.state.profile.currency,
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -267,12 +289,15 @@ class ExpensesScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                '৳${money.format(state.totalBudget)}',
+                CurrencyService().formatMoney(
+                  amount: state.totalBudget,
+                  currency: currency,
+                ),
                 style: AppTextStyles.displayMedium(zen.textPrimary),
               ),
               const SizedBox(height: 5),
               Text(
-                '৳${money.format(state.spentThisMonth)} spent · ৳${money.format(state.remainingBudget)} remaining',
+                '${CurrencyService().formatMoney(amount: state.spentThisMonth, currency: currency)} spent · ${CurrencyService().formatMoney(amount: state.remainingBudget, currency: currency)} remaining',
                 style: AppTextStyles.bodySmall(zen.textSecondary),
               ),
               const SizedBox(height: 14),

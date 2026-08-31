@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
-import 'package:intl/intl.dart';
 
+import '../../../core/services/currency_service.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/zenflow_theme.dart';
 import '../../../core/widgets/zen_card.dart';
@@ -9,8 +9,13 @@ import '../models/chart_segment.dart';
 
 class SpendingBreakdownCard extends StatelessWidget {
   final List<ChartSegment> segments;
+  final String currency;
 
-  const SpendingBreakdownCard({super.key, required this.segments});
+  const SpendingBreakdownCard({
+    super.key,
+    required this.segments,
+    this.currency = 'BDT',
+  });
 
   IconData _iconFor(String label) {
     switch (label.toLowerCase()) {
@@ -30,7 +35,6 @@ class SpendingBreakdownCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final zen = context.zenColors;
-    final money = NumberFormat('#,##0.00');
 
     return ZenCard(
       padding: const EdgeInsets.all(16),
@@ -48,7 +52,6 @@ class SpendingBreakdownCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-
           ListView.separated(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -67,7 +70,11 @@ class SpendingBreakdownCard extends StatelessWidget {
                           color: item.color.withValues(alpha: 0.12),
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(_iconFor(item.label), size: 14, color: item.color),
+                        child: Icon(
+                          _iconFor(item.label),
+                          size: 14,
+                          color: item.color,
+                        ),
                       ),
                       const SizedBox(width: 10),
                       Text(
@@ -80,8 +87,12 @@ class SpendingBreakdownCard extends StatelessWidget {
                         style: AppTextStyles.labelSmall(zen.textMuted),
                       ),
                       Text(
-                        '৳${money.format(item.amount)}',
-                        style: AppTextStyles.labelMedium(zen.textPrimary).copyWith(
+                        CurrencyService().formatMoney(
+                          amount: item.amount,
+                          currency: currency,
+                        ),
+                        style:
+                            AppTextStyles.labelMedium(zen.textPrimary).copyWith(
                           fontWeight: FontWeight.w600,
                         ),
                       ),

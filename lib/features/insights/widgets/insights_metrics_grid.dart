@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
-import 'package:intl/intl.dart';
 
+import '../../../core/services/currency_service.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/zenflow_theme.dart';
 import '../../../core/widgets/zen_card.dart';
@@ -11,6 +11,7 @@ class InsightsMetricsGrid extends StatelessWidget {
   final double spentThisMonth;
   final double dailyAverage;
   final int totalTransactions;
+  final String currency;
 
   const InsightsMetricsGrid({
     super.key,
@@ -18,11 +19,12 @@ class InsightsMetricsGrid extends StatelessWidget {
     required this.spentThisMonth,
     required this.dailyAverage,
     required this.totalTransactions,
+    this.currency = 'BDT',
   });
 
   @override
   Widget build(BuildContext context) {
-    final money = NumberFormat('#,##0.00');
+    final curService = CurrencyService();
 
     return Column(
       children: [
@@ -32,7 +34,10 @@ class InsightsMetricsGrid extends StatelessWidget {
               child: _MetricCard(
                 icon: LucideIcons.wallet,
                 label: 'Total spending',
-                value: '৳${money.format(totalSpending)}',
+                value: curService.formatMoney(
+                  amount: totalSpending,
+                  currency: currency,
+                ),
               ),
             ),
             const SizedBox(width: 12),
@@ -40,7 +45,10 @@ class InsightsMetricsGrid extends StatelessWidget {
               child: _MetricCard(
                 icon: LucideIcons.calendar,
                 label: 'This month',
-                value: '৳${money.format(spentThisMonth)}',
+                value: curService.formatMoney(
+                  amount: spentThisMonth,
+                  currency: currency,
+                ),
               ),
             ),
           ],
@@ -52,7 +60,10 @@ class InsightsMetricsGrid extends StatelessWidget {
               child: _MetricCard(
                 icon: LucideIcons.clock,
                 label: 'Daily average',
-                value: '৳${money.format(dailyAverage)}',
+                value: curService.formatMoney(
+                  amount: dailyAverage,
+                  currency: currency,
+                ),
               ),
             ),
             const SizedBox(width: 12),

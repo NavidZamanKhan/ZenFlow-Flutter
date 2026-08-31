@@ -194,7 +194,7 @@ class DashboardRepository {
       id: '1',
       title: 'Have to buy a mouse',
       amount: 2500,
-      currency: '৳',
+      currency: 'BDT',
       category: 'Shopping',
       date: _staticDate,
     ),
@@ -202,7 +202,7 @@ class DashboardRepository {
       id: '2',
       title: 'Internet bill',
       amount: 1200,
-      currency: '৳',
+      currency: 'BDT',
       category: 'Bills',
       date: _staticDate,
     ),
@@ -210,7 +210,7 @@ class DashboardRepository {
       id: '3',
       title: 'YouTube',
       amount: 169,
-      currency: '৳',
+      currency: 'BDT',
       category: 'Subscription',
       date: _staticDate,
     ),
@@ -218,7 +218,7 @@ class DashboardRepository {
       id: '4',
       title: 'Netflix',
       amount: 1200,
-      currency: '৳',
+      currency: 'BDT',
       category: 'Subscription',
       date: _staticDate,
     ),
@@ -226,7 +226,7 @@ class DashboardRepository {
       id: '5',
       title: 'Spotify',
       amount: 219,
-      currency: '৳',
+      currency: 'BDT',
       category: 'Subscription',
       date: _staticDate,
     ),
@@ -234,7 +234,7 @@ class DashboardRepository {
       id: '6',
       title: 'Rent',
       amount: 15000,
-      currency: '৳',
+      currency: 'BDT',
       category: 'Bills',
       date: _staticDate,
     ),
@@ -242,7 +242,7 @@ class DashboardRepository {
 
   static const DashboardBudget _defaultBudget = DashboardBudget(
     monthlyTotal: 40000,
-    currency: '৳',
+    currency: 'BDT',
   );
 
   /// Toggles task completion state with live Django backend sync

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
-import 'package:intl/intl.dart';
 
+import '../../../core/services/currency_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../expenses/services/expenses_service.dart';
 import '../models/chart_segment.dart';
@@ -184,7 +184,10 @@ class InsightsBloc extends Bloc<InsightsEvent, InsightsState> {
         ),
         SmartTrendItem(
           title: 'Savings Potential',
-          value: '৳${NumberFormat('#,##0').format(remaining)}',
+          value: CurrencyService().formatMoney(
+            amount: remaining,
+            currency: budgets.isNotEmpty ? budgets.first.currency : 'BDT',
+          ),
           subtitle: 'Unspent budget this month.',
           icon: LucideIcons.sparkles,
           accentColor: const Color(0xFF8B5CF6),

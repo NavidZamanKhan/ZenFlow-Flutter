@@ -2,16 +2,21 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
 
+import '../../../core/services/currency_service.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/zenflow_theme.dart';
 import '../../../core/widgets/zen_card.dart';
 
 class WeeklySpendingChart extends StatefulWidget {
   final List<double> weeklyAmounts;
+  final String currency;
 
-  const WeeklySpendingChart({super.key, required this.weeklyAmounts});
+  const WeeklySpendingChart({
+    super.key,
+    required this.weeklyAmounts,
+    this.currency = 'BDT',
+  });
 
   @override
   State<WeeklySpendingChart> createState() => _WeeklySpendingChartState();
@@ -99,7 +104,7 @@ class _WeeklySpendingChartState extends State<WeeklySpendingChart>
                     ),
                   ),
                   child: Text(
-                    '${_days[_selectedBarIndex!]} · ৳${NumberFormat('#,##0').format(selectedAmount)}',
+                    '${_days[_selectedBarIndex!]} · ${CurrencyService().formatMoney(amount: selectedAmount, currency: widget.currency)}',
                     style: AppTextStyles.labelSmall(zen.accent).copyWith(
                       fontWeight: FontWeight.w700,
                       fontSize: 11,

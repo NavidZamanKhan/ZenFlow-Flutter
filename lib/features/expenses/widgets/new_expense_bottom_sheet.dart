@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
-import 'package:intl/intl.dart';
 
+import '../../../core/services/currency_service.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/zenflow_theme.dart';
 import '../../../core/widgets/zen_button.dart';
@@ -10,16 +10,29 @@ import '../models/expense_item.dart';
 
 class NewExpenseBottomSheet extends StatefulWidget {
   final ValueChanged<ExpenseItem> onCreated;
-  const NewExpenseBottomSheet({super.key, required this.onCreated});
+  final String currency;
+
+  const NewExpenseBottomSheet({
+    super.key,
+    required this.onCreated,
+    this.currency = 'BDT',
+  });
+
   static Future<void> show(
     BuildContext context, {
     required ValueChanged<ExpenseItem> onCreated,
-  }) => showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (_) => NewExpenseBottomSheet(onCreated: onCreated),
-  );
+    String currency = 'BDT',
+  }) =>
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => NewExpenseBottomSheet(
+          onCreated: onCreated,
+          currency: currency,
+        ),
+      );
+
   @override
   State<NewExpenseBottomSheet> createState() => _NewExpenseBottomSheetState();
 }
@@ -30,6 +43,7 @@ class _NewExpenseBottomSheetState extends State<NewExpenseBottomSheet> {
   String _category = 'Bills';
   String _method = 'Card';
   DateTime _date = DateTime.now();
+
   static const _categories = [
     'Bills',
     'Shopping',
@@ -39,7 +53,9 @@ class _NewExpenseBottomSheetState extends State<NewExpenseBottomSheet> {
     'Transportation',
     'Entertainment',
   ];
+
   static const _methods = ['Card', 'Cash', 'Mobile Wallet'];
+
   @override
   void dispose() {
     _amount.dispose();
@@ -62,9 +78,10 @@ class _NewExpenseBottomSheetState extends State<NewExpenseBottomSheet> {
     if (amount == null || amount <= 0 || _title.text.trim().isEmpty) return;
     widget.onCreated(
       ExpenseItem(
-        id: DateTime.now().microsecondsSinceEpoch.toString(),
+        id: 'temp-${DateTime.now().millisecondsSinceEpoch}',
         title: _title.text.trim(),
         amount: amount,
+        currency: widget.currency,
         category: _category,
         date: _date,
         paymentMethod: _method,
@@ -76,6 +93,10 @@ class _NewExpenseBottomSheetState extends State<NewExpenseBottomSheet> {
   @override
   Widget build(BuildContext context) {
     final zen = context.zenColors;
+    final currencySymbol =
+        CurrencyService.metadata[widget.currency]?.symbol ??
+            widget.currency;
+
     return Container(
       padding: EdgeInsets.fromLTRB(
         20,
@@ -126,7 +147,10 @@ class _NewExpenseBottomSheetState extends State<NewExpenseBottomSheet> {
               ),
               prefixIcon: Padding(
                 padding: const EdgeInsets.all(13),
-                child: Text('৳', style: AppTextStyles.labelLarge(zen.accent)),
+                child: Text(
+                  currencySymbol,
+                  style: AppTextStyles.labelLarge(zen.accent),
+                ),
               ),
             ),
             const SizedBox(height: 12),
@@ -178,24 +202,21 @@ class _NewExpenseBottomSheetState extends State<NewExpenseBottomSheet> {
                     Icon(LucideIcons.calendar, size: 17, color: zen.accent),
                     const SizedBox(width: 9),
                     Text(
-                      DateFormat('MM/dd/yyyy').format(_date),
+                      '${_date.year}-${_date.month.toString().padLeft(2, '0')}-${_date.day.toString().padLeft(2, '0')}',
                       style: AppTextStyles.bodyMedium(zen.textPrimary),
                     ),
                     const Spacer(),
-                    Text(
-                      'Date',
-                      style: AppTextStyles.labelSmall(zen.textSecondary),
+                    Icon(
+                      LucideIcons.chevron_down,
+                      size: 16,
+                      color: zen.textMuted,
                     ),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 20),
-            ZenButton(
-              label: 'Save expense',
-              icon: LucideIcons.plus,
-              onPressed: _submit,
-            ),
+            const SizedBox(height: 22),
+            ZenButton(label: 'Save expense', onPressed: _submit),
           ],
         ),
       ),
@@ -204,33 +225,40 @@ class _NewExpenseBottomSheetState extends State<NewExpenseBottomSheet> {
 
   Widget _select(
     BuildContext context,
-    List<String> values,
-    String selected,
+    List<String> items,
+    String value,
     ValueChanged<String> onChanged,
   ) {
     final zen = context.zenColors;
-    return Wrap(
-      spacing: 7,
-      runSpacing: 7,
-      children: values
-          .map(
-            (value) => ChoiceChip(
-              label: Text(
-                value,
-                style: AppTextStyles.labelSmall(
-                  value == selected ? Colors.white : zen.textSecondary,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+      decoration: BoxDecoration(
+        color: zen.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: zen.border),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: value,
+          isExpanded: true,
+          icon: Icon(LucideIcons.chevron_down, size: 16, color: zen.textMuted),
+          dropdownColor: zen.surface,
+          items: items
+              .map(
+                (item) => DropdownMenuItem(
+                  value: item,
+                  child: Text(
+                    item,
+                    style: AppTextStyles.bodyMedium(zen.textPrimary),
+                  ),
                 ),
-              ),
-              selected: value == selected,
-              selectedColor: zen.accent,
-              backgroundColor: zen.subtleFill,
-              side: BorderSide(
-                color: value == selected ? zen.accent : zen.border,
-              ),
-              onSelected: (_) => onChanged(value),
-            ),
-          )
-          .toList(),
+              )
+              .toList(),
+          onChanged: (val) {
+            if (val != null) onChanged(val);
+          },
+        ),
+      ),
     );
   }
 }

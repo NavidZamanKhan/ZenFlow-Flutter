@@ -32,7 +32,7 @@ class DashboardExpense extends Equatable {
       id: json['id']?.toString() ?? '',
       title: json['title']?.toString() ?? 'Expense',
       amount: parsedAmount,
-      currency: json['currency']?.toString() ?? '৳',
+      currency: json['currency']?.toString() ?? 'BDT',
       category: json['category']?.toString() ?? 'General',
       date: rawDate != null
           ? (DateTime.tryParse(rawDate.toString()) ?? DateTime.now())

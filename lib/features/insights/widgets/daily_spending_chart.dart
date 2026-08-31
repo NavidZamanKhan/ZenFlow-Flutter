@@ -2,8 +2,8 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
 
+import '../../../core/services/currency_service.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/zenflow_theme.dart';
 import '../../../core/widgets/zen_card.dart';
@@ -11,8 +11,13 @@ import '../models/daily_spending_point.dart';
 
 class DailySpendingChart extends StatefulWidget {
   final List<DailySpendingPoint> points;
+  final String currency;
 
-  const DailySpendingChart({super.key, required this.points});
+  const DailySpendingChart({
+    super.key,
+    required this.points,
+    this.currency = 'BDT',
+  });
 
   @override
   State<DailySpendingChart> createState() => _DailySpendingChartState();
@@ -94,7 +99,7 @@ class _DailySpendingChartState extends State<DailySpendingChart>
                     ),
                   ),
                   child: Text(
-                    'Day ${selectedPoint.day} · ৳${NumberFormat('#,##0').format(selectedPoint.amount)}',
+                    'Day ${selectedPoint.day} · ${CurrencyService().formatMoney(amount: selectedPoint.amount, currency: widget.currency)}',
                     style: AppTextStyles.labelSmall(zen.accent).copyWith(
                       fontWeight: FontWeight.w700,
                       fontSize: 11,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/services/currency_service.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/zenflow_theme.dart';
 import '../models/expense_item.dart';
@@ -28,7 +29,10 @@ class ExpenseTransactionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final zen = context.zenColors;
-    final money = '৳${NumberFormat('#,##0.00').format(expense.amount)}';
+    final money = CurrencyService().formatMoney(
+      amount: expense.amount,
+      currency: expense.currency,
+    );
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(

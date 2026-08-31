@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 
+import '../../../core/services/currency_service.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/zenflow_theme.dart';
 import '../../../core/widgets/zen_card.dart';
@@ -250,4 +251,4 @@ class ExpenseSnapshotCard extends StatelessWidget {
 }
 
 String _amount(double amount, String currency) =>
-    '${currency == 'BDT' ? '৳' : '$currency '}${amount.toStringAsFixed(0)}';
+    CurrencyService().formatMoney(amount: amount, currency: currency);

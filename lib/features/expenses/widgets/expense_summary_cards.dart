@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
-import 'package:intl/intl.dart';
 
+import '../../../core/services/currency_service.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/zenflow_theme.dart';
 import '../../../core/widgets/zen_card.dart';
@@ -12,6 +12,7 @@ class ExpenseSummaryCards extends StatelessWidget {
   final double month;
   final double remaining;
   final double monthlyBudget;
+  final String currency;
 
   const ExpenseSummaryCards({
     super.key,
@@ -20,9 +21,11 @@ class ExpenseSummaryCards extends StatelessWidget {
     required this.month,
     required this.remaining,
     this.monthlyBudget = 40000.0,
+    this.currency = 'BDT',
   });
 
-  String _money(double value) => '৳${NumberFormat('#,##0.00').format(value)}';
+  String _money(double value) =>
+      CurrencyService().formatMoney(amount: value, currency: currency);
 
   @override
   Widget build(BuildContext context) {

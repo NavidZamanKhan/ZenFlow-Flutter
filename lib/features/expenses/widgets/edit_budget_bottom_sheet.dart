@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/services/currency_service.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/zenflow_theme.dart';
 import '../../../core/widgets/zen_button.dart';
@@ -14,16 +15,19 @@ class EditBudgetBottomSheet extends StatefulWidget {
     required this.budget,
     required this.onSaved,
   });
+
   static Future<void> show(
     BuildContext context, {
     required CategoryBudgetItem budget,
     required ValueChanged<double> onSaved,
-  }) => showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (_) => EditBudgetBottomSheet(budget: budget, onSaved: onSaved),
-  );
+  }) =>
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => EditBudgetBottomSheet(budget: budget, onSaved: onSaved),
+      );
+
   @override
   State<EditBudgetBottomSheet> createState() => _EditBudgetBottomSheetState();
 }
@@ -32,6 +36,7 @@ class _EditBudgetBottomSheetState extends State<EditBudgetBottomSheet> {
   late final TextEditingController _amount = TextEditingController(
     text: widget.budget.budgetAmount.toStringAsFixed(0),
   );
+
   @override
   void dispose() {
     _amount.dispose();
@@ -48,6 +53,10 @@ class _EditBudgetBottomSheetState extends State<EditBudgetBottomSheet> {
   @override
   Widget build(BuildContext context) {
     final zen = context.zenColors;
+    final currencySymbol =
+        CurrencyService.metadata[widget.budget.currency]?.symbol ??
+            widget.budget.currency;
+
     return Container(
       padding: EdgeInsets.fromLTRB(
         20,
@@ -91,7 +100,10 @@ class _EditBudgetBottomSheetState extends State<EditBudgetBottomSheet> {
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             prefixIcon: Padding(
               padding: const EdgeInsets.all(13),
-              child: Text('৳', style: AppTextStyles.labelLarge(zen.accent)),
+              child: Text(
+                currencySymbol,
+                style: AppTextStyles.labelLarge(zen.accent),
+              ),
             ),
           ),
           const SizedBox(height: 20),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/theme/zenflow_theme.dart';
+import '../../profile/bloc/profile_bloc.dart';
 import '../bloc/insights_bloc.dart';
 import '../bloc/insights_event.dart';
 import '../bloc/insights_state.dart';
@@ -20,6 +21,9 @@ class InsightsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final zen = context.zenColors;
+    final currency = context.select<ProfileBloc, String>(
+      (b) => b.state.profile.currency,
+    );
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -44,7 +48,7 @@ class InsightsScreen extends StatelessWidget {
                   ),
                   padding: const EdgeInsets.fromLTRB(20, 20, 20, 118),
                   children: [
-                    // Header (Title, Subtitle, BDT badge)
+                    // Header
                     const InsightsHeader(),
                     const SizedBox(height: 16),
 
@@ -65,6 +69,7 @@ class InsightsScreen extends StatelessWidget {
                       spentThisMonth: state.spentThisMonth,
                       dailyAverage: state.dailyAverage,
                       totalTransactions: state.totalTransactions,
+                      currency: currency,
                     ),
                     const SizedBox(height: 18),
 
@@ -73,15 +78,22 @@ class InsightsScreen extends StatelessWidget {
                       title: 'Expenses by category',
                       subtitle: 'Your all-time category mix',
                       segments: state.categorySegments,
+                      currency: currency,
                     ),
                     const SizedBox(height: 18),
 
                     // Daily Spending Spline Line Chart
-                    DailySpendingChart(points: state.dailyPoints),
+                    DailySpendingChart(
+                      points: state.dailyPoints,
+                      currency: currency,
+                    ),
                     const SizedBox(height: 18),
 
                     // Weekly Spending Bar Chart
-                    WeeklySpendingChart(weeklyAmounts: state.weeklyAmounts),
+                    WeeklySpendingChart(
+                      weeklyAmounts: state.weeklyAmounts,
+                      currency: currency,
+                    ),
                     const SizedBox(height: 18),
 
                     // Payment Methods Donut
@@ -89,11 +101,15 @@ class InsightsScreen extends StatelessWidget {
                       title: 'Payment methods',
                       subtitle: 'Distribution by amount spent',
                       segments: state.paymentSegments,
+                      currency: currency,
                     ),
                     const SizedBox(height: 18),
 
                     // Category Spending Breakdown Bars
-                    SpendingBreakdownCard(segments: state.categorySegments),
+                    SpendingBreakdownCard(
+                      segments: state.categorySegments,
+                      currency: currency,
+                    ),
                     const SizedBox(height: 18),
 
                     // Smart Analytics & Trends

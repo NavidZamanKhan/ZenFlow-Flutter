@@ -9,6 +9,9 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/zenflow_theme.dart';
 import '../../dashboard/bloc/dashboard_bloc.dart';
 import '../../dashboard/bloc/dashboard_event.dart';
+import '../../tasks/bloc/tasks_bloc.dart';
+import '../../tasks/bloc/tasks_event.dart';
+import '../../tasks/widgets/task_detail_bottom_sheet.dart';
 import '../bloc/notifications_bloc.dart';
 import '../bloc/notifications_event.dart';
 import '../bloc/notifications_state.dart';
@@ -19,12 +22,20 @@ class NotificationsBottomSheet extends StatelessWidget {
 
   static Future<void> show(BuildContext context) {
     HapticFeedback.mediumImpact();
+    final notifBloc = context.read<NotificationsBloc>();
+    final tasksBloc = context.read<TasksBloc>();
+    final dashBloc = context.read<DashboardBloc>();
+
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => BlocProvider.value(
-        value: context.read<NotificationsBloc>(),
+      builder: (_) => MultiBlocProvider(
+        providers: [
+          BlocProvider.value(value: notifBloc),
+          BlocProvider.value(value: tasksBloc),
+          BlocProvider.value(value: dashBloc),
+        ],
         child: const NotificationsBottomSheet(),
       ),
     );
@@ -139,7 +150,8 @@ class NotificationsBottomSheet extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 14, vertical: 12),
                           itemCount: notifications.length,
-                          separatorBuilder: (_, _) => const SizedBox(height: 6),
+                          separatorBuilder: (_, _) =>
+                              const SizedBox(height: 6),
                           itemBuilder: (context, index) {
                             final item = notifications[index];
                             return _NotificationTile(notification: item);
@@ -276,11 +288,40 @@ class _NotificationTile extends StatelessWidget {
               MarkNotificationAsReadEvent(notification.id),
             );
 
-        if (notification.targetTabIndex != null) {
-          Navigator.of(context).pop();
-          context.read<DashboardBloc>().add(
-                DashboardTabSelected(notification.targetTabIndex!),
-              );
+        final targetTab = notification.targetTabIndex;
+        final targetItemId = notification.targetItemId;
+        final isTaskType = notification.type == NotificationType.task;
+        final tasksBloc = context.read<TasksBloc>();
+        final dashboardBloc = context.read<DashboardBloc>();
+
+        Navigator.of(context).pop();
+
+        if (targetTab != null) {
+          dashboardBloc.add(DashboardTabSelected(targetTab));
+        }
+
+        if (isTaskType && targetItemId != null) {
+          final matchedTasks = tasksBloc.state.tasks.where(
+            (t) => t.id == targetItemId,
+          );
+
+          if (matchedTasks.isNotEmpty) {
+            final matchedTask = matchedTasks.first;
+            Future.delayed(const Duration(milliseconds: 280), () {
+              if (context.mounted) {
+                TaskDetailBottomSheet.show(
+                  context,
+                  task: matchedTask,
+                  onToggle: () {
+                    tasksBloc.add(ToggleTaskEvent(matchedTask.id));
+                  },
+                  onDelete: () {
+                    tasksBloc.add(DeleteTaskEvent(matchedTask.id));
+                  },
+                );
+              }
+            });
+          }
         }
       },
       borderRadius: BorderRadius.circular(16),

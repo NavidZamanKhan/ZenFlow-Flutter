@@ -96,6 +96,7 @@ class NotificationsEngine {
             isRead: _readIds.contains(id),
             timestamp: task.dueDate!,
             targetTabIndex: 1, // Tasks tab
+            targetItemId: task.id,
           ),
         );
       } else if (taskDate.isAtSameMomentAs(today)) {
@@ -112,6 +113,7 @@ class NotificationsEngine {
             isRead: _readIds.contains(id),
             timestamp: task.dueDate!,
             targetTabIndex: 1, // Tasks tab
+            targetItemId: task.id,
           ),
         );
       } else if (taskDate.isAtSameMomentAs(tomorrow)) {
@@ -126,6 +128,7 @@ class NotificationsEngine {
             isRead: _readIds.contains(id),
             timestamp: task.dueDate!,
             targetTabIndex: 1, // Tasks tab
+            targetItemId: task.id,
           ),
         );
       }
@@ -154,6 +157,7 @@ class NotificationsEngine {
             isRead: _readIds.contains(id),
             timestamp: event.start,
             targetTabIndex: 2, // Calendar tab
+            targetItemId: event.id,
           ),
         );
       } else if (eventDate.isAtSameMomentAs(tomorrow)) {
@@ -167,6 +171,7 @@ class NotificationsEngine {
             isRead: _readIds.contains(id),
             timestamp: event.start,
             targetTabIndex: 2, // Calendar tab
+            targetItemId: event.id,
           ),
         );
       }

@@ -10,6 +10,7 @@ class AppNotification extends Equatable {
   final bool isRead;
   final DateTime timestamp;
   final int? targetTabIndex; // 0=Overview, 1=Tasks, 2=Calendar, 3=Expenses, 4=Insights
+  final String? targetItemId; // Exact ID of the task or event
 
   const AppNotification({
     required this.id,
@@ -19,6 +20,7 @@ class AppNotification extends Equatable {
     required this.isRead,
     required this.timestamp,
     this.targetTabIndex,
+    this.targetItemId,
   });
 
   AppNotification copyWith({
@@ -29,6 +31,7 @@ class AppNotification extends Equatable {
     bool? isRead,
     DateTime? timestamp,
     int? targetTabIndex,
+    String? targetItemId,
   }) {
     return AppNotification(
       id: id ?? this.id,
@@ -38,6 +41,7 @@ class AppNotification extends Equatable {
       isRead: isRead ?? this.isRead,
       timestamp: timestamp ?? this.timestamp,
       targetTabIndex: targetTabIndex ?? this.targetTabIndex,
+      targetItemId: targetItemId ?? this.targetItemId,
     );
   }
 
@@ -50,5 +54,6 @@ class AppNotification extends Equatable {
         isRead,
         timestamp,
         targetTabIndex,
+        targetItemId,
       ];
 }

@@ -18,6 +18,8 @@ import '../../expenses/bloc/expenses_event.dart';
 import '../../expenses/views/expenses_screen.dart';
 import '../../insights/bloc/insights_bloc.dart';
 import '../../insights/views/insights_screen.dart';
+import '../../notifications/bloc/notifications_bloc.dart';
+import '../../notifications/bloc/notifications_event.dart';
 import '../../profile/bloc/profile_bloc.dart';
 import '../../profile/bloc/profile_event.dart';
 import '../../tasks/bloc/tasks_bloc.dart';
@@ -45,6 +47,7 @@ class DashboardShell extends StatelessWidget {
       ),
       BlocProvider(create: (_) => InsightsBloc()),
       BlocProvider(create: (_) => ProfileBloc()..add(const LoadProfileEvent())),
+      BlocProvider(create: (_) => NotificationsBloc()),
     ],
     child: const _DashboardAuthSyncListener(
       child: _DashboardShellBody(),
@@ -59,16 +62,36 @@ class _DashboardAuthSyncListener extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<AuthBloc, AuthState>(
-      listenWhen: (previous, current) => current is AuthenticatedState,
-      listener: (context, state) {
-        // When user logs in or switches accounts, trigger fresh live cloud sync across all features
-        context.read<DashboardBloc>().add(const DashboardLoadRequested());
-        context.read<TasksBloc>().add(const LoadTasksEvent());
-        context.read<CalendarBloc>().add(const LoadCalendarEvent());
-        context.read<ExpensesBloc>().add(const FetchExpenses());
-        context.read<ProfileBloc>().add(const LoadProfileEvent());
-      },
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<AuthBloc, AuthState>(
+          listenWhen: (previous, current) => current is AuthenticatedState,
+          listener: (context, state) {
+            // When user logs in or switches accounts, trigger fresh live cloud sync across all features
+            context.read<DashboardBloc>().add(const DashboardLoadRequested());
+            context.read<TasksBloc>().add(const LoadTasksEvent());
+            context.read<CalendarBloc>().add(const LoadCalendarEvent());
+            context.read<ExpensesBloc>().add(const FetchExpenses());
+            context.read<ProfileBloc>().add(const LoadProfileEvent());
+          },
+        ),
+        BlocListener<DashboardBloc, DashboardState>(
+          listenWhen: (previous, current) =>
+              current.status == DashboardStatus.success ||
+              (current.tasks.isNotEmpty && previous.tasks != current.tasks),
+          listener: (context, state) {
+            // Dynamically derive alerts whenever dashboard data updates
+            context.read<NotificationsBloc>().add(
+                  DeriveNotificationsEvent(
+                    tasks: state.tasks,
+                    events: state.events,
+                    expenses: state.expenses,
+                    budget: state.budget,
+                  ),
+                );
+          },
+        ),
+      ],
       child: child,
     );
   }

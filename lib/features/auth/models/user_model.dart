@@ -55,9 +55,25 @@ class AuthResponseModel extends Equatable {
         ? json['user'] as Map<String, dynamic>
         : json;
 
+    final tokensJson = json['tokens'] is Map<String, dynamic>
+        ? json['tokens'] as Map<String, dynamic>
+        : json;
+
+    final access = tokensJson['access']?.toString() ??
+        tokensJson['access_token']?.toString() ??
+        json['access']?.toString() ??
+        json['access_token']?.toString() ??
+        '';
+
+    final refresh = tokensJson['refresh']?.toString() ??
+        tokensJson['refresh_token']?.toString() ??
+        json['refresh']?.toString() ??
+        json['refresh_token']?.toString() ??
+        '';
+
     return AuthResponseModel(
-      accessToken: json['access']?.toString() ?? json['access_token']?.toString() ?? '',
-      refreshToken: json['refresh']?.toString() ?? json['refresh_token']?.toString() ?? '',
+      accessToken: access,
+      refreshToken: refresh,
       user: UserModel.fromJson(userJson),
     );
   }

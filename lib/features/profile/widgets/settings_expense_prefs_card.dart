@@ -276,10 +276,13 @@ class _SettingsExpensePrefsCardState extends State<SettingsExpensePrefsCard> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
+                      Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 6,
+                        runSpacing: 2,
                         children: [
                           Text(
-                            'Live Market Exchange Rate ',
+                            'Live Market Exchange Rate',
                             style: AppTextStyles.labelMedium(zen.textPrimary)
                                 .copyWith(fontWeight: FontWeight.w700),
                           ),

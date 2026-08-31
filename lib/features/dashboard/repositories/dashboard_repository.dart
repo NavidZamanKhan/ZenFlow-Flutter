@@ -42,29 +42,56 @@ class DashboardRepository {
       budgetFuture,
     ]);
 
+    final tasks = results[0] as List<FocusTask>;
+    final events = results[1] as List<DashboardEventItem>;
+    final expenses = results[2] as List<DashboardExpense>;
+    final budget = results[3] as DashboardBudget;
+
+    // Merge task deadlines into events if events are empty
+    final mergedEvents = <DashboardEventItem>[...events];
+    if (mergedEvents.isEmpty) {
+      for (final t in tasks) {
+        if (t.dueDate != null) {
+          mergedEvents.add(
+            DashboardEventItem(
+              id: 'task_${t.id}',
+              title: t.title,
+              start: t.dueDate!,
+              isAllDay: t.detail.isEmpty,
+            ),
+          );
+        }
+      }
+    }
+
     return DashboardSnapshot(
-      tasks: results[0] as List<FocusTask>,
-      events: results[1] as List<DashboardEventItem>,
-      expenses: results[2] as List<DashboardExpense>,
-      budget: results[3] as DashboardBudget,
+      tasks: tasks,
+      events: mergedEvents.isNotEmpty ? mergedEvents : _defaultEvents,
+      expenses: expenses,
+      budget: budget,
     );
   }
 
   Future<List<FocusTask>> _fetchTasks() async {
     try {
       final response = await _apiClient.dio.get(ApiEndpoints.tasks);
-      return _records(response).map(FocusTask.fromJson).toList(growable: false);
+      final list = _records(response)
+          .map(FocusTask.fromJson)
+          .toList(growable: false);
+      if (list.isNotEmpty) return list;
+      return _defaultTasks;
     } catch (_) {
-      return const [];
+      return _defaultTasks;
     }
   }
 
   Future<List<DashboardEventItem>> _fetchEvents() async {
     try {
       final response = await _apiClient.dio.get(ApiEndpoints.events);
-      return _records(response)
+      final list = _records(response)
           .map(DashboardEventItem.fromJson)
           .toList(growable: false);
+      return list;
     } catch (_) {
       return const [];
     }
@@ -96,6 +123,71 @@ class DashboardRepository {
       return _defaultBudget;
     }
   }
+
+  static final DateTime _staticDate = DateTime(2026, 8, 15);
+
+  static final List<FocusTask> _defaultTasks = [
+    FocusTask(
+      id: '1',
+      title: 'Going on a walk',
+      detail: '4:25 AM',
+      category: 'Personal',
+      priority: 'medium',
+      dueDate: DateTime(2026, 8, 28, 4, 25),
+      isComplete: true,
+    ),
+    FocusTask(
+      id: '2',
+      title: 'shouting at the home owner',
+      detail: 'Today',
+      category: 'General',
+      priority: 'high',
+      dueDate: DateTime(2026, 8, 29),
+      isComplete: false,
+    ),
+    FocusTask(
+      id: '3',
+      title: 'Have to buy pen and notebook',
+      detail: 'Tomorrow',
+      category: 'Shopping',
+      priority: 'medium',
+      dueDate: DateTime(2026, 8, 30),
+      isComplete: false,
+    ),
+    FocusTask(
+      id: '4',
+      title: 'Going out',
+      detail: '4:30 AM',
+      category: 'Personal',
+      priority: 'medium',
+      dueDate: DateTime(2026, 8, 30, 4, 30),
+      isComplete: false,
+    ),
+    FocusTask(
+      id: '5',
+      title: 'Visiting my aunt at the hospital',
+      detail: 'Today',
+      category: 'Family',
+      priority: 'high',
+      dueDate: DateTime(2026, 8, 31),
+      isComplete: true,
+    ),
+  ];
+
+  static final List<DashboardEventItem> _defaultEvents = [
+    DashboardEventItem(
+      id: 'task_5',
+      title: 'Visiting my aunt at the hospital',
+      start: DateTime(2026, 8, 31),
+      isAllDay: true,
+    ),
+    DashboardEventItem(
+      id: 'task_4',
+      title: 'Going out',
+      start: DateTime(2026, 8, 30, 4, 30),
+      isAllDay: false,
+    ),
+  ];
 
   static final List<DashboardExpense> _defaultExpenses = [
     DashboardExpense(
@@ -152,8 +244,6 @@ class DashboardRepository {
     monthlyTotal: 40000,
     currency: '৳',
   );
-
-  static final DateTime _staticDate = DateTime(2026, 8, 15);
 
   /// Toggles task completion state with live Django backend sync
   Future<FocusTask> toggleTask(FocusTask task) async {

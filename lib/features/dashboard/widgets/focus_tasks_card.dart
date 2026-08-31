@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/zenflow_theme.dart';
 import '../../../core/widgets/zen_card.dart';
+import '../../tasks/bloc/tasks_bloc.dart';
+import '../../tasks/bloc/tasks_event.dart';
+import '../../tasks/widgets/new_task_bottom_sheet.dart';
 import '../bloc/dashboard_bloc.dart';
 import '../bloc/dashboard_event.dart';
 import '../models/focus_task.dart';
@@ -18,6 +22,7 @@ class FocusTasksCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final zen = context.zenColors;
     final completed = tasks.where((task) => task.isComplete).length;
+
     return ZenCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -52,7 +57,17 @@ class FocusTasksCard extends StatelessWidget {
             ...tasks.take(5).map((task) => _FocusTaskTile(task: task)),
           const SizedBox(height: 8),
           TextButton.icon(
-            onPressed: () {},
+            onPressed: () {
+              NewTaskBottomSheet.show(
+                context,
+                onTaskCreated: (newTask) {
+                  context.read<TasksBloc>().add(AddTaskEvent(newTask));
+                  context
+                      .read<DashboardBloc>()
+                      .add(const DashboardLoadRequested());
+                },
+              );
+            },
             icon: Icon(LucideIcons.plus, size: 16, color: zen.accent),
             label: Text(
               'Add task',
@@ -85,26 +100,51 @@ class _FocusTaskTile extends StatelessWidget {
     final date = due == today
         ? 'Today'
         : due == today.add(const Duration(days: 1))
-        ? 'Tomorrow'
-        : '${due.day}/${due.month}';
+            ? 'Tomorrow'
+            : '${due.day}/${due.month}';
     return task.detail.isEmpty ? date : '$date · ${task.detail}';
+  }
+
+  Color _categoryColor(String category) {
+    switch (category.toLowerCase()) {
+      case 'personal':
+        return const Color(0xFF8B5CF6);
+      case 'shopping':
+        return const Color(0xFFEC4899);
+      case 'family':
+        return const Color(0xFFF59E0B);
+      case 'work':
+        return const Color(0xFF10B981);
+      default:
+        return const Color(0xFF3B82F6);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final zen = context.zenColors;
+    final catColor = _categoryColor(task.category);
+
     return InkWell(
-      onTap: () =>
-          context.read<DashboardBloc>().add(DashboardTaskToggled(task.id)),
+      onTap: () {
+        HapticFeedback.selectionClick();
+        context.read<DashboardBloc>().add(DashboardTaskToggled(task.id));
+      },
       borderRadius: BorderRadius.circular(14),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 2),
         child: Row(
           children: [
-            Icon(
-              task.isComplete ? LucideIcons.circle_check : LucideIcons.circle,
-              size: 20,
-              color: task.isComplete ? zen.accent : zen.border,
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              transitionBuilder: (child, anim) =>
+                  ScaleTransition(scale: anim, child: child),
+              child: Icon(
+                task.isComplete ? LucideIcons.circle_check : LucideIcons.circle,
+                key: ValueKey(task.isComplete),
+                size: 20,
+                color: task.isComplete ? zen.accent : zen.border,
+              ),
             ),
             const SizedBox(width: 11),
             Expanded(
@@ -113,14 +153,12 @@ class _FocusTaskTile extends StatelessWidget {
                 children: [
                   Text(
                     task.title,
-                    style:
-                        AppTextStyles.bodyMedium(
-                          task.isComplete ? zen.textMuted : zen.textPrimary,
-                        ).copyWith(
-                          decoration: task.isComplete
-                              ? TextDecoration.lineThrough
-                              : null,
-                        ),
+                    style: AppTextStyles.bodyMedium(
+                      task.isComplete ? zen.textMuted : zen.textPrimary,
+                    ).copyWith(
+                      decoration:
+                          task.isComplete ? TextDecoration.lineThrough : null,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(
@@ -134,12 +172,15 @@ class _FocusTaskTile extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: zen.subtleFill,
+                color: catColor.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
                 task.category.isEmpty ? 'General' : task.category,
-                style: AppTextStyles.labelSmall(zen.textSecondary),
+                style: AppTextStyles.labelSmall(catColor).copyWith(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 11,
+                ),
               ),
             ),
           ],

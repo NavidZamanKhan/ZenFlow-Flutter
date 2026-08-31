@@ -23,11 +23,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
       final remote = await _service.getProfile();
       if (remote != null) {
         emit(state.copyWith(
-          profile: state.profile.copyWith(
-            fullName: remote.fullName,
-            username: remote.username,
-            email: remote.email,
-          ),
+          profile: remote,
           status: ProfileStatus.success,
         ));
       } else {
@@ -49,16 +45,16 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     ));
 
     try {
-      await _service.updateProfile(fullName: event.profile.fullName);
+      await _service.updateProfile(profile: event.profile);
     } catch (_) {
       // Keep optimistic state
     }
   }
 
-  void _onUpdatePreferences(
+  Future<void> _onUpdatePreferences(
     UpdateExpensePreferencesEvent event,
     Emitter<ProfileState> emit,
-  ) {
+  ) async {
     final updated = state.profile.copyWith(
       currency: event.currency,
       dateFormat: event.dateFormat,
@@ -69,10 +65,13 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
       is24HourTime: event.is24HourTime,
       displayDensity: event.displayDensity,
     );
+
     emit(state.copyWith(
       profile: updated,
       status: ProfileStatus.success,
       message: 'Preferences saved successfully',
     ));
+
+    await _service.saveLocalProfile(updated);
   }
 }

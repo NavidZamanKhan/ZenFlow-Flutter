@@ -13,9 +13,11 @@ import 'insights_state.dart';
 
 class InsightsBloc extends Bloc<InsightsEvent, InsightsState> {
   final ExpensesService _expensesService;
+  final CurrencyService _currencyService;
 
-  InsightsBloc({ExpensesService? expensesService})
+  InsightsBloc({ExpensesService? expensesService, CurrencyService? currencyService})
       : _expensesService = expensesService ?? ExpensesService(),
+        _currencyService = currencyService ?? CurrencyService(),
         super(InsightsState.initial()) {
     on<LoadInsightsEvent>(_onLoad);
     on<RefreshInsightsEvent>(_onRefresh);
@@ -29,14 +31,14 @@ class InsightsBloc extends Bloc<InsightsEvent, InsightsState> {
     Emitter<InsightsState> emit,
   ) async {
     emit(state.copyWith(status: InsightsStatus.loading));
-    await _computeAndEmitInsights(emit, state.timeRange);
+    await _computeAndEmitInsights(emit, state.timeRange, event.activeCurrency);
   }
 
   Future<void> _onRefresh(
     RefreshInsightsEvent event,
     Emitter<InsightsState> emit,
   ) async {
-    await _computeAndEmitInsights(emit, state.timeRange);
+    await _computeAndEmitInsights(emit, state.timeRange, event.activeCurrency);
   }
 
   Future<void> _onTimeRangeChanged(
@@ -44,12 +46,23 @@ class InsightsBloc extends Bloc<InsightsEvent, InsightsState> {
     Emitter<InsightsState> emit,
   ) async {
     emit(state.copyWith(timeRange: event.timeRange));
-    await _computeAndEmitInsights(emit, event.timeRange);
+    await _computeAndEmitInsights(emit, event.timeRange, event.activeCurrency);
+  }
+
+  /// Convert an expense amount from its stored currency to the active display currency.
+  double _convert(double amount, String fromCurrency, String toCurrency) {
+    if (fromCurrency == toCurrency || amount == 0) return amount;
+    return _currencyService.convertAmount(
+      amount: amount,
+      toCurrency: toCurrency,
+      fromCurrency: fromCurrency,
+    );
   }
 
   Future<void> _computeAndEmitInsights(
     Emitter<InsightsState> emit,
     InsightsTimeRange range,
+    String activeCurrency,
   ) async {
     try {
       final allExpenses = await _expensesService.getExpenses();
@@ -75,14 +88,15 @@ class InsightsBloc extends Bloc<InsightsEvent, InsightsState> {
       final targetExpenses =
           filteredExpenses.isNotEmpty ? filteredExpenses : allExpenses;
 
-      // 1. Category Segments
+      // 1. Category Segments — convert each expense to active currency
       final categoryTotals = <String, double>{};
       double totalSpent = 0.0;
 
       for (final exp in targetExpenses) {
+        final converted = _convert(exp.amount, exp.currency, activeCurrency);
         categoryTotals[exp.category] =
-            (categoryTotals[exp.category] ?? 0.0) + exp.amount;
-        totalSpent += exp.amount;
+            (categoryTotals[exp.category] ?? 0.0) + converted;
+        totalSpent += converted;
       }
 
       final categorySegments = categoryTotals.entries.map((e) {
@@ -96,11 +110,12 @@ class InsightsBloc extends Bloc<InsightsEvent, InsightsState> {
       }).toList()
         ..sort((a, b) => b.amount.compareTo(a.amount));
 
-      // 2. Payment Method Segments
+      // 2. Payment Method Segments — convert each expense
       final paymentTotals = <String, double>{};
       for (final exp in targetExpenses) {
+        final converted = _convert(exp.amount, exp.currency, activeCurrency);
         paymentTotals[exp.paymentMethod] =
-            (paymentTotals[exp.paymentMethod] ?? 0.0) + exp.amount;
+            (paymentTotals[exp.paymentMethod] ?? 0.0) + converted;
       }
 
       final paymentSegments = paymentTotals.entries.map((e) {
@@ -114,10 +129,11 @@ class InsightsBloc extends Bloc<InsightsEvent, InsightsState> {
       }).toList()
         ..sort((a, b) => b.amount.compareTo(a.amount));
 
-      // 3. Daily Spending Points (Sorted by day)
+      // 3. Daily Spending Points — convert each expense
       final dailyMap = <int, double>{};
       for (final exp in targetExpenses) {
-        dailyMap[exp.date.day] = (dailyMap[exp.date.day] ?? 0.0) + exp.amount;
+        final converted = _convert(exp.amount, exp.currency, activeCurrency);
+        dailyMap[exp.date.day] = (dailyMap[exp.date.day] ?? 0.0) + converted;
       }
 
       final sortedDays = dailyMap.keys.toList()..sort();
@@ -128,23 +144,26 @@ class InsightsBloc extends Bloc<InsightsEvent, InsightsState> {
         );
       }).toList();
 
-      // 4. Weekly Spending Breakdown (Mon..Sun amounts)
+      // 4. Weekly Spending Breakdown — convert each expense
       final weeklyAmounts = <double>[0, 0, 0, 0, 0, 0, 0];
       for (final exp in targetExpenses) {
         final dayOfWeek = (exp.date.weekday - 1).clamp(0, 6);
-        weeklyAmounts[dayOfWeek] += exp.amount;
+        final converted = _convert(exp.amount, exp.currency, activeCurrency);
+        weeklyAmounts[dayOfWeek] += converted;
       }
 
-      // 5. Total Budget & Remaining
+      // 5. Total Budget & Remaining — convert budget from its currency
+      final budgetCurrency = budgets.isNotEmpty ? budgets.first.currency : 'BDT';
       double totalBudget = 0.0;
       for (final b in budgets) {
         totalBudget += b.budgetAmount;
       }
       if (totalBudget == 0) totalBudget = 40000.0;
 
-      final remaining = (totalBudget - totalSpent).clamp(0.0, double.infinity);
+      final convertedBudget = _convert(totalBudget, budgetCurrency, activeCurrency);
+      final remaining = (convertedBudget - totalSpent).clamp(0.0, double.infinity);
       final budgetUtilization =
-          totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0.0;
+          convertedBudget > 0 ? (totalSpent / convertedBudget) * 100 : 0.0;
       final dailyAverage = totalSpent / (DateTime.now().day.clamp(1, 31));
 
       // 6. Smart Analytics & Trends
@@ -184,9 +203,9 @@ class InsightsBloc extends Bloc<InsightsEvent, InsightsState> {
         ),
         SmartTrendItem(
           title: 'Savings Potential',
-          value: CurrencyService().formatMoney(
+          value: _currencyService.formatMoney(
             amount: remaining,
-            currency: budgets.isNotEmpty ? budgets.first.currency : 'BDT',
+            currency: activeCurrency,
           ),
           subtitle: 'Unspent budget this month.',
           icon: LucideIcons.sparkles,

@@ -10,18 +10,29 @@ abstract class InsightsEvent extends Equatable {
 }
 
 class LoadInsightsEvent extends InsightsEvent {
-  const LoadInsightsEvent();
+  final String activeCurrency;
+
+  const LoadInsightsEvent({this.activeCurrency = 'BDT'});
+
+  @override
+  List<Object?> get props => [activeCurrency];
 }
 
 class RefreshInsightsEvent extends InsightsEvent {
-  const RefreshInsightsEvent();
+  final String activeCurrency;
+
+  const RefreshInsightsEvent({this.activeCurrency = 'BDT'});
+
+  @override
+  List<Object?> get props => [activeCurrency];
 }
 
 class TimeRangeChangedEvent extends InsightsEvent {
   final InsightsTimeRange timeRange;
+  final String activeCurrency;
 
-  const TimeRangeChangedEvent(this.timeRange);
+  const TimeRangeChangedEvent(this.timeRange, {this.activeCurrency = 'BDT'});
 
   @override
-  List<Object?> get props => [timeRange];
+  List<Object?> get props => [timeRange, activeCurrency];
 }

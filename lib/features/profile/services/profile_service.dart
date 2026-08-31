@@ -116,6 +116,27 @@ class ProfileService {
     } catch (_) {}
   }
 
+  static const _validCategories = [
+    'Food',
+    'Bills',
+    'Shopping',
+    'Subscription',
+    'Education',
+    'Transportation',
+    'Healthcare',
+    'Entertainment',
+    'Travel',
+    'Others',
+  ];
+
+  static String _normalizeCategory(String raw) {
+    final lower = raw.trim().toLowerCase();
+    for (final cat in _validCategories) {
+      if (cat.toLowerCase() == lower) return cat;
+    }
+    return 'Others';
+  }
+
   Future<void> syncConvertedBudgetToCloud({
     required String oldCurrency,
     required String newCurrency,
@@ -144,17 +165,18 @@ class ProfileService {
 
         final convertedCategories = <String, double>{};
         categoryMap.forEach((k, v) {
+          final normalizedCat = _normalizeCategory(k);
           final amt = (v is num)
               ? v.toDouble()
               : double.tryParse(v.toString()) ?? 0.0;
-          convertedCategories[k] = cur.convertAmount(
+          convertedCategories[normalizedCat] = cur.convertAmount(
             amount: amt,
             toCurrency: newCurrency,
             fromCurrency: serverCurrency,
           );
         });
 
-        await _apiClient.dio.put(
+        final response = await _apiClient.dio.put(
           ApiEndpoints.budget,
           data: {
             'monthlyTotal': convertedMonthlyTotal,
@@ -162,6 +184,13 @@ class ProfileService {
             'currency': newCurrency,
           },
         );
+
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          final local = await getProfile();
+          if (local != null) {
+            await saveLocalProfile(local.copyWith(currency: newCurrency));
+          }
+        }
       }
     } catch (_) {}
   }

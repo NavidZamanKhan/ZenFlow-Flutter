@@ -45,19 +45,17 @@ class ExpensesBloc extends Bloc<ExpensesEvent, ExpensesState> {
   ) async {
     try {
       final expenses = await _service.getExpenses();
-      if (expenses.isNotEmpty) {
-        _cache.set(_cacheKey, expenses);
-        final budgets = await _service.getBudget(expenses);
-        final monthlyTotal = await _service.getMonthlyBudgetTotal();
-        final budgetCurrency =
-            budgets.isNotEmpty ? budgets.first.currency : state.budgetCurrency;
-        emit(state.copyWith(
-          expenses: expenses,
-          budgets: budgets.isNotEmpty ? budgets : state.budgets,
-          monthlyTotalBudget: monthlyTotal,
-          budgetCurrency: budgetCurrency,
-        ));
-      }
+      _cache.set(_cacheKey, expenses);
+      final budgets = await _service.getBudget(expenses);
+      final monthlyTotal = await _service.getMonthlyBudgetTotal();
+      final budgetCurrency =
+          budgets.isNotEmpty ? budgets.first.currency : state.budgetCurrency;
+      emit(state.copyWith(
+        expenses: expenses,
+        budgets: budgets.isNotEmpty ? budgets : state.budgets,
+        monthlyTotalBudget: monthlyTotal,
+        budgetCurrency: budgetCurrency,
+      ));
     } catch (_) {}
   }
 

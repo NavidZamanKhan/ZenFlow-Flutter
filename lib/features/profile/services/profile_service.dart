@@ -4,6 +4,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../../core/constants/api_endpoints.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/services/currency_service.dart';
 import '../models/user_profile.dart';
 
 class ProfileService {
@@ -51,11 +52,10 @@ class ProfileService {
         final username = email.contains('@') ? email.split('@').first : 'user';
         final hasPassword = data['has_password'] != false;
 
-        // Also fetch cloud budget currency to stay 100% in sync
+        // Fetch cloud budget currency to stay 100% in sync across all devices
         String activeCurrency = localProfile?.currency ?? 'BDT';
         try {
-          final budgetResponse =
-              await _apiClient.dio.get(ApiEndpoints.budget);
+          final budgetResponse = await _apiClient.dio.get(ApiEndpoints.budget);
           if (budgetResponse.data is Map) {
             final bData = budgetResponse.data as Map;
             if (bData['currency'] != null &&
@@ -114,12 +114,50 @@ class ProfileService {
     } catch (_) {}
   }
 
-  Future<void> syncCurrencyToCloud(String currency) async {
+  Future<void> syncConvertedBudgetToCloud({
+    required String oldCurrency,
+    required String newCurrency,
+  }) async {
     try {
-      await _apiClient.dio.put(
-        ApiEndpoints.budget,
-        data: {'currency': currency},
-      );
+      final budgetResponse = await _apiClient.dio.get(ApiEndpoints.budget);
+      if (budgetResponse.data is Map) {
+        final data = Map<String, dynamic>.from(budgetResponse.data as Map);
+        final rawMonthly =
+            (data['monthlyTotal'] ?? data['monthly_total'] ?? 40000.0) as num;
+        final rawCategoryBudgets =
+            data['categoryBudgets'] ?? data['category_budgets'];
+        final categoryMap = rawCategoryBudgets is Map
+            ? Map<String, dynamic>.from(rawCategoryBudgets)
+            : <String, dynamic>{};
+
+        final cur = CurrencyService();
+        final convertedMonthlyTotal = cur.convertAmount(
+          amount: rawMonthly.toDouble(),
+          toCurrency: newCurrency,
+          fromCurrency: oldCurrency,
+        );
+
+        final convertedCategories = <String, double>{};
+        categoryMap.forEach((k, v) {
+          final amt = (v is num)
+              ? v.toDouble()
+              : double.tryParse(v.toString()) ?? 0.0;
+          convertedCategories[k] = cur.convertAmount(
+            amount: amt,
+            toCurrency: newCurrency,
+            fromCurrency: oldCurrency,
+          );
+        });
+
+        await _apiClient.dio.put(
+          ApiEndpoints.budget,
+          data: {
+            'monthlyTotal': convertedMonthlyTotal,
+            'categoryBudgets': convertedCategories,
+            'currency': newCurrency,
+          },
+        );
+      }
     } catch (_) {}
   }
 

@@ -55,8 +55,11 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     UpdateExpensePreferencesEvent event,
     Emitter<ProfileState> emit,
   ) async {
+    final oldCurrency = state.profile.currency;
+    final newCurrency = event.currency;
+
     final updated = state.profile.copyWith(
-      currency: event.currency,
+      currency: newCurrency,
       dateFormat: event.dateFormat,
       numberFormat: event.numberFormat,
       firstDayOfWeek: event.firstDayOfWeek,
@@ -73,6 +76,12 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     ));
 
     await _service.saveLocalProfile(updated);
-    await _service.syncCurrencyToCloud(event.currency);
+
+    if (oldCurrency != newCurrency) {
+      await _service.syncConvertedBudgetToCloud(
+        oldCurrency: oldCurrency,
+        newCurrency: newCurrency,
+      );
+    }
   }
 }

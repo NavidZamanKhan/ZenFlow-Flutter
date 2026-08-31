@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:intl/intl.dart';
 
@@ -321,57 +322,113 @@ class _NewEventBottomSheetState extends State<NewEventBottomSheet> {
                     children: [
                       Text('Type', style: AppTextStyles.labelMedium(zen.textPrimary)),
                       const SizedBox(height: 6),
-                      Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: zen.subtleFill,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: zen.border),
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () => setState(() => _selectedType = CalendarItemType.event),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 8),
-                                  decoration: BoxDecoration(
-                                    color: _selectedType == CalendarItemType.event ? zen.card : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      'Event',
-                                      style: AppTextStyles.labelSmall(
-                                        _selectedType == CalendarItemType.event ? zen.accent : zen.textSecondary,
-                                      ),
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final itemWidth = (constraints.maxWidth - 8) / 2;
+                          final selectedIndex =
+                              _selectedType == CalendarItemType.event ? 0 : 1;
+
+                          return Container(
+                            height: 42,
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: zen.subtleFill,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: zen.border),
+                            ),
+                            child: Stack(
+                              children: [
+                                // Animated sliding background pill with micro-shadow
+                                AnimatedPositioned(
+                                  duration: const Duration(milliseconds: 240),
+                                  curve: Curves.easeOutCubic,
+                                  left: selectedIndex * itemWidth,
+                                  top: 0,
+                                  bottom: 0,
+                                  width: itemWidth,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: zen.card,
+                                      borderRadius: BorderRadius.circular(10),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(
+                                            alpha: zen.isDark ? 0.25 : 0.06,
+                                          ),
+                                          blurRadius: 4,
+                                          offset: const Offset(0, 1.5),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ),
-                              ),
-                            ),
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () => setState(() => _selectedType = CalendarItemType.taskDeadline),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 8),
-                                  decoration: BoxDecoration(
-                                    color: _selectedType == CalendarItemType.taskDeadline ? zen.card : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      'Deadline',
-                                      style: AppTextStyles.labelSmall(
-                                        _selectedType == CalendarItemType.taskDeadline ? zen.accent : zen.textSecondary,
+                                // Interactive text targets
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: GestureDetector(
+                                        behavior: HitTestBehavior.opaque,
+                                        onTap: () {
+                                          HapticFeedback.selectionClick();
+                                          setState(() => _selectedType =
+                                              CalendarItemType.event);
+                                        },
+                                        child: Center(
+                                          child: AnimatedDefaultTextStyle(
+                                            duration: const Duration(
+                                                milliseconds: 200),
+                                            style: AppTextStyles.labelSmall(
+                                              _selectedType ==
+                                                      CalendarItemType.event
+                                                  ? zen.accent
+                                                  : zen.textSecondary,
+                                            ).copyWith(
+                                              fontWeight: _selectedType ==
+                                                      CalendarItemType.event
+                                                  ? FontWeight.w700
+                                                  : FontWeight.w500,
+                                            ),
+                                            child: const Text('Event'),
+                                          ),
+                                        ),
                                       ),
                                     ),
-                                  ),
+                                    Expanded(
+                                      child: GestureDetector(
+                                        behavior: HitTestBehavior.opaque,
+                                        onTap: () {
+                                          HapticFeedback.selectionClick();
+                                          setState(() => _selectedType =
+                                              CalendarItemType.taskDeadline);
+                                        },
+                                        child: Center(
+                                          child: AnimatedDefaultTextStyle(
+                                            duration: const Duration(
+                                                milliseconds: 200),
+                                            style: AppTextStyles.labelSmall(
+                                              _selectedType ==
+                                                      CalendarItemType
+                                                          .taskDeadline
+                                                  ? zen.accent
+                                                  : zen.textSecondary,
+                                            ).copyWith(
+                                              fontWeight: _selectedType ==
+                                                      CalendarItemType
+                                                          .taskDeadline
+                                                  ? FontWeight.w700
+                                                  : FontWeight.w500,
+                                            ),
+                                            child: const Text('Deadline'),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
+                              ],
                             ),
-                          ],
-                        ),
+                          );
+                        },
                       ),
                     ],
                   ),

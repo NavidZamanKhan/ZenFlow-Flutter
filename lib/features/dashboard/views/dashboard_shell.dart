@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 
@@ -112,10 +113,13 @@ class _DashboardShellBody extends StatelessWidget {
 class _ZenBottomNavigation extends StatelessWidget {
   final int selectedIndex;
   const _ZenBottomNavigation({required this.selectedIndex});
+
   @override
   Widget build(BuildContext context) {
     final zen = context.zenColors;
     final isIos = defaultTargetPlatform == TargetPlatform.iOS;
+    final totalTabs = _DashboardShellBody._destinations.length;
+
     return SafeArea(
       top: false,
       child: Container(
@@ -124,7 +128,7 @@ class _ZenBottomNavigation extends StatelessWidget {
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: zen.isDark ? .22 : .07),
+              color: Colors.black.withValues(alpha: zen.isDark ? .24 : .08),
               blurRadius: isIos ? 28 : 20,
               offset: const Offset(0, 10),
             ),
@@ -135,7 +139,7 @@ class _ZenBottomNavigation extends StatelessWidget {
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+              padding: const EdgeInsets.all(5),
               decoration: BoxDecoration(
                 color: zen.isDark
                     ? zen.card.withValues(alpha: .85)
@@ -146,98 +150,110 @@ class _ZenBottomNavigation extends StatelessWidget {
                   width: 1,
                 ),
               ),
-              child: Row(
-                children: List.generate(_DashboardShellBody._destinations.length, (
-                  index,
-                ) {
-                  final destination =
-                      _DashboardShellBody._destinations[index];
-                  final isSelected = selectedIndex == index;
-                  return Expanded(
-                    child: _ZenNavItem(
-                      destination: destination,
-                      isSelected: isSelected,
-                      onTap: () {
-                        context.read<DashboardBloc>().add(
-                          DashboardTabSelected(index),
-                        );
-                      },
+              child: SizedBox(
+                height: 58,
+                child: Stack(
+                  children: [
+                    // Continuous Silky Smooth Sliding Background Pill
+                    IgnorePointer(
+                      child: AnimatedAlign(
+                        duration: const Duration(milliseconds: 360),
+                        curve: Curves.easeOutCubic,
+                        alignment: Alignment(
+                          -1.0 + (2.0 * selectedIndex / (totalTabs - 1)),
+                          0,
+                        ),
+                        child: FractionallySizedBox(
+                          widthFactor: 1 / totalTabs,
+                          heightFactor: 1,
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 2),
+                            decoration: BoxDecoration(
+                              color: zen.isDark
+                                  ? zen.accent.withValues(alpha: .22)
+                                  : zen.accentSoft,
+                              borderRadius: BorderRadius.circular(18),
+                              border: Border.all(
+                                color: zen.accent.withValues(
+                                  alpha: isIos ? .28 : .18,
+                                ),
+                                width: 1,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: zen.accent.withValues(
+                                    alpha: isIos ? .16 : .10,
+                                  ),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
-                  );
-                }),
+
+                    // Interactive Tab Buttons Layer
+                    Row(
+                      children: List.generate(totalTabs, (index) {
+                        final destination =
+                            _DashboardShellBody._destinations[index];
+                        final isSelected = selectedIndex == index;
+
+                        return Expanded(
+                          child: InkWell(
+                            onTap: () {
+                              HapticFeedback.selectionClick();
+                              context.read<DashboardBloc>().add(
+                                    DashboardTabSelected(index),
+                                  );
+                            },
+                            borderRadius: BorderRadius.circular(18),
+                            splashColor: Colors.transparent,
+                            highlightColor: Colors.transparent,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                AnimatedScale(
+                                  duration: const Duration(milliseconds: 240),
+                                  curve: Curves.easeOutBack,
+                                  scale: isSelected ? 1.08 : 0.92,
+                                  child: Icon(
+                                    destination.icon,
+                                    size: isSelected ? 20 : 19,
+                                    color: isSelected
+                                        ? zen.accent
+                                        : zen.textMuted,
+                                  ),
+                                ),
+                                const SizedBox(height: 3),
+                                AnimatedDefaultTextStyle(
+                                  duration: const Duration(milliseconds: 200),
+                                  style: AppTextStyles.labelSmall(
+                                    isSelected ? zen.accent : zen.textMuted,
+                                  ).copyWith(
+                                    fontWeight: isSelected
+                                        ? FontWeight.w700
+                                        : FontWeight.w500,
+                                    fontSize: 10.5,
+                                  ),
+                                  child: Text(
+                                    destination.label,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ZenNavItem extends StatelessWidget {
-  final ({String label, IconData icon}) destination;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _ZenNavItem({
-    required this.destination,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final zen = context.zenColors;
-
-    return Semantics(
-      button: true,
-      selected: isSelected,
-      label: destination.label,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        splashColor: Colors.transparent,
-        highlightColor: Colors.transparent,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 260),
-          curve: Curves.easeOutCubic,
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? (zen.isDark
-                    ? zen.accent.withValues(alpha: 0.16)
-                    : zen.accent.withValues(alpha: 0.10))
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AnimatedScale(
-                duration: const Duration(milliseconds: 200),
-                scale: isSelected ? 1.08 : 1.0,
-                child: Icon(
-                  destination.icon,
-                  size: 20,
-                  color: isSelected ? zen.accent : zen.textMuted,
-                ),
-              ),
-              const SizedBox(height: 3),
-              AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 200),
-                style: AppTextStyles.labelSmall(
-                  isSelected ? zen.accent : zen.textMuted,
-                ).copyWith(
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                  fontSize: 10.5,
-                ),
-                child: Text(
-                  destination.label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
           ),
         ),
       ),

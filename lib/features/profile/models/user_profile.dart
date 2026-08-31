@@ -15,6 +15,7 @@ class UserProfile extends Equatable {
   final String defaultExpenseCategory;
   final String displayDensity;
   final bool is24HourTime;
+  final bool hasPassword;
 
   const UserProfile({
     required this.fullName,
@@ -31,6 +32,7 @@ class UserProfile extends Equatable {
     this.defaultExpenseCategory = 'Food',
     this.displayDensity = 'comfortable',
     this.is24HourTime = false,
+    this.hasPassword = true,
   });
 
   String get initials {
@@ -57,6 +59,7 @@ class UserProfile extends Equatable {
     String? defaultExpenseCategory,
     String? displayDensity,
     bool? is24HourTime,
+    bool? hasPassword,
   }) {
     return UserProfile(
       fullName: fullName ?? this.fullName,
@@ -74,6 +77,7 @@ class UserProfile extends Equatable {
           defaultExpenseCategory ?? this.defaultExpenseCategory,
       displayDensity: displayDensity ?? this.displayDensity,
       is24HourTime: is24HourTime ?? this.is24HourTime,
+      hasPassword: hasPassword ?? this.hasPassword,
     );
   }
 
@@ -93,5 +97,6 @@ class UserProfile extends Equatable {
         defaultExpenseCategory,
         displayDensity,
         is24HourTime,
+        hasPassword,
       ];
 }

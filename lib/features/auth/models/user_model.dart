@@ -6,6 +6,7 @@ class UserModel extends Equatable {
   final String fullName;
   final String? avatar;
   final bool emailVerified;
+  final bool hasPassword;
 
   const UserModel({
     required this.id,
@@ -13,6 +14,7 @@ class UserModel extends Equatable {
     required this.fullName,
     this.avatar,
     this.emailVerified = false,
+    this.hasPassword = true,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -22,6 +24,7 @@ class UserModel extends Equatable {
       fullName: json['full_name']?.toString() ?? json['name']?.toString() ?? '',
       avatar: json['avatar']?.toString(),
       emailVerified: json['email_verified'] == true,
+      hasPassword: json['has_password'] != false,
     );
   }
 
@@ -32,11 +35,12 @@ class UserModel extends Equatable {
       'full_name': fullName,
       'avatar': avatar,
       'email_verified': emailVerified,
+      'has_password': hasPassword,
     };
   }
 
   @override
-  List<Object?> get props => [id, email, fullName, avatar, emailVerified];
+  List<Object?> get props => [id, email, fullName, avatar, emailVerified, hasPassword];
 }
 
 class AuthResponseModel extends Equatable {

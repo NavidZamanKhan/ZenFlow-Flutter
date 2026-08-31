@@ -37,6 +37,7 @@ class ProfileService {
           defaultExpenseCategory: data['defaultExpenseCategory'] ?? 'Food',
           is24HourTime: data['is24HourTime'] ?? false,
           displayDensity: data['displayDensity'] ?? 'Comfortable',
+          hasPassword: data['hasPassword'] != false,
         );
       }
     } catch (_) {}
@@ -48,6 +49,7 @@ class ProfileService {
         final fullName = data['full_name'] ?? data['fullName'] ?? 'Navid';
         final email = data['email'] ?? '';
         final username = email.contains('@') ? email.split('@').first : 'user';
+        final hasPassword = data['has_password'] != false;
 
         final merged = (localProfile ?? UserProfile(
           fullName: fullName,
@@ -57,6 +59,7 @@ class ProfileService {
           fullName: fullName,
           username: username,
           email: email,
+          hasPassword: hasPassword,
         );
 
         await saveLocalProfile(merged);
@@ -88,6 +91,7 @@ class ProfileService {
           'defaultExpenseCategory': profile.defaultExpenseCategory,
           'is24HourTime': profile.is24HourTime,
           'displayDensity': profile.displayDensity,
+          'hasPassword': profile.hasPassword,
         }),
       );
     } catch (_) {}

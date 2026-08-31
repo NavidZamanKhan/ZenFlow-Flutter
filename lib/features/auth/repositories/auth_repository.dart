@@ -196,6 +196,32 @@ class AuthRepository {
     }
   }
 
+  /// Sets password for accounts that currently have no usable password (Google OAuth)
+  Future<UserModel> setPassword({
+    required String newPassword,
+    required String confirmPassword,
+  }) async {
+    try {
+      final response = await _apiClient.dio.post(
+        ApiEndpoints.setPassword,
+        data: {
+          'new_password': newPassword,
+          'confirm_password': confirmPassword,
+        },
+      );
+
+      final userJson = response.data?['user'] is Map<String, dynamic>
+          ? response.data['user'] as Map<String, dynamic>
+          : response.data as Map<String, dynamic>;
+
+      return UserModel.fromJson(userJson);
+    } on DioException catch (e) {
+      throw Exception(
+        _extractErrorMessage(e, 'Failed to set account password.'),
+      );
+    }
+  }
+
   /// Sends 6-digit password reset OTP to authenticated user's email
   Future<String> sendPasswordResetOtp() async {
     try {

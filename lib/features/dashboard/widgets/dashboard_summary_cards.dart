@@ -162,26 +162,46 @@ class _ReminderRow extends StatelessWidget {
 class ExpenseSnapshotCard extends StatelessWidget {
   final List<DashboardExpense> expenses;
   final DashboardBudget budget;
+  final String activeCurrency;
 
   const ExpenseSnapshotCard({
     super.key,
     required this.expenses,
     required this.budget,
+    this.activeCurrency = 'BDT',
   });
 
   @override
   Widget build(BuildContext context) {
     final zen = context.zenColors;
     final now = DateTime.now();
+    final cur = CurrencyService();
+
     final spent = expenses
         .where(
           (expense) =>
               expense.date.year == now.year && expense.date.month == now.month,
         )
-        .fold<double>(0, (sum, expense) => sum + expense.amount);
-    final progress = budget.monthlyTotal == 0
+        .fold<double>(
+          0,
+          (sum, expense) =>
+              sum +
+              cur.convertAmount(
+                amount: expense.amount,
+                toCurrency: activeCurrency,
+                fromCurrency: expense.currency,
+              ),
+        );
+
+    final convertedBudget = cur.convertAmount(
+      amount: budget.monthlyTotal,
+      toCurrency: activeCurrency,
+      fromCurrency: budget.currency,
+    );
+
+    final progress = convertedBudget == 0
         ? 0.0
-        : (spent / budget.monthlyTotal).clamp(0.0, 1.0);
+        : (spent / convertedBudget).clamp(0.0, 1.0);
 
     return InkWell(
       onTap: () {
@@ -207,14 +227,14 @@ class ExpenseSnapshotCard extends StatelessWidget {
             ),
             const SizedBox(height: 14),
             Text(
-              _amount(spent, budget.currency),
+              _amount(spent, activeCurrency),
               style: AppTextStyles.statNumber(zen.textPrimary),
             ),
             const SizedBox(height: 3),
             Text(
-              budget.monthlyTotal == 0
+              convertedBudget == 0
                   ? 'Set a monthly budget to track spending'
-                  : 'of ${_amount(budget.monthlyTotal, budget.currency)} monthly budget',
+                  : 'of ${_amount(convertedBudget, activeCurrency)} monthly budget',
               style: AppTextStyles.bodySmall(zen.textMuted),
             ),
             const SizedBox(height: 14),
@@ -232,9 +252,9 @@ class ExpenseSnapshotCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  budget.monthlyTotal == 0
+                  convertedBudget == 0
                       ? '${expenses.length} expenses this month'
-                      : '${_amount(budget.monthlyTotal - spent, budget.currency)} remaining',
+                      : '${_amount(convertedBudget - spent, activeCurrency)} remaining',
                   style: AppTextStyles.labelMedium(zen.accent),
                 ),
                 Text(

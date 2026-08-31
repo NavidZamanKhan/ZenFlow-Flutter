@@ -46,7 +46,6 @@ class DashboardShell extends StatelessWidget {
         create: (_) => ExpensesBloc()..add(const FetchExpenses()),
       ),
       BlocProvider(create: (_) => InsightsBloc()),
-      BlocProvider(create: (_) => ProfileBloc()..add(const LoadProfileEvent())),
       BlocProvider(create: (_) => NotificationsBloc()),
     ],
     child: const _DashboardAuthSyncListener(

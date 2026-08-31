@@ -10,10 +10,13 @@ import '../models/expense_item.dart';
 class ExpenseTransactionTile extends StatelessWidget {
   final ExpenseItem expense;
   final VoidCallback? onDelete;
+  final String activeCurrency;
+
   const ExpenseTransactionTile({
     super.key,
     required this.expense,
     this.onDelete,
+    this.activeCurrency = 'BDT',
   });
 
   IconData get _icon => switch (expense.category) {
@@ -31,7 +34,8 @@ class ExpenseTransactionTile extends StatelessWidget {
     final zen = context.zenColors;
     final money = CurrencyService().formatMoney(
       amount: expense.amount,
-      currency: expense.currency,
+      currency: activeCurrency,
+      fromCurrency: expense.currency,
     );
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),

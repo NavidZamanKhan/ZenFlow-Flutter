@@ -8,6 +8,7 @@ import '../../../core/theme/zenflow_theme.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../../auth/bloc/auth_state.dart';
 import '../../auth/models/user_model.dart';
+import '../../profile/bloc/profile_bloc.dart';
 import '../bloc/dashboard_bloc.dart';
 import '../bloc/dashboard_event.dart';
 import '../bloc/dashboard_state.dart';
@@ -78,6 +79,9 @@ class DashboardOverviewScreen extends StatelessWidget {
               ExpenseSnapshotCard(
                 expenses: state.expenses,
                 budget: state.budget,
+                activeCurrency: context.select<ProfileBloc, String>(
+                  (b) => b.state.profile.currency,
+                ),
               ),
             ],
           );

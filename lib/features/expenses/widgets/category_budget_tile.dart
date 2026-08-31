@@ -10,14 +10,20 @@ import '../models/category_budget_item.dart';
 class CategoryBudgetTile extends StatelessWidget {
   final CategoryBudgetItem budget;
   final VoidCallback onEdit;
+  final String activeCurrency;
+
   const CategoryBudgetTile({
     super.key,
     required this.budget,
     required this.onEdit,
+    this.activeCurrency = 'BDT',
   });
 
-  String _money(double value) =>
-      CurrencyService().formatMoney(amount: value, currency: budget.currency);
+  String _money(double value) => CurrencyService().formatMoney(
+        amount: value,
+        currency: activeCurrency,
+        fromCurrency: budget.currency,
+      );
 
   @override
   Widget build(BuildContext context) {

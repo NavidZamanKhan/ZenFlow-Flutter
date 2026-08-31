@@ -125,15 +125,21 @@ class ExpensesScreen extends StatelessWidget {
       (bloc) => bloc.state.profile.currency,
     );
 
+    final total = state.convertedTotalExpenses(toCurrency: currency);
+    final today = state.convertedTodaysSpending(toCurrency: currency);
+    final month = state.convertedSpentThisMonth(toCurrency: currency);
+    final budgetTotal = state.convertedTotalBudget(toCurrency: currency);
+    final remaining = budgetTotal - month;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ExpenseSummaryCards(
-          total: state.totalExpenses,
-          today: state.todaysSpending,
-          month: state.spentThisMonth,
-          remaining: state.remainingBudget,
-          monthlyBudget: state.monthlyTotalBudget,
+          total: total,
+          today: today,
+          month: month,
+          remaining: remaining,
+          monthlyBudget: budgetTotal,
           currency: currency,
         ),
         const SizedBox(height: 20),
@@ -199,7 +205,6 @@ class ExpensesScreen extends StatelessWidget {
                         ).copyWith(
                           fontWeight:
                               active ? FontWeight.w700 : FontWeight.w500,
-                          fontSize: 12.5,
                         ),
                         child: Text(filter),
                       ),
@@ -210,9 +215,9 @@ class ExpensesScreen extends StatelessWidget {
             },
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 18),
         ZenCard(
-          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -229,18 +234,26 @@ class ExpensesScreen extends StatelessWidget {
                     const Spacer(),
                     Text(
                       '${expenses.length} items',
-                      style: AppTextStyles.labelSmall(zen.textMuted),
+                      style: AppTextStyles.labelSmall(zen.textSecondary),
                     ),
                   ],
                 ),
               ),
+              const SizedBox(height: 8),
               if (expenses.isEmpty)
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 34),
+                  padding: const EdgeInsets.symmetric(vertical: 36),
                   child: Center(
-                    child: Text(
-                      'No expenses in this category.',
-                      style: AppTextStyles.bodyMedium(zen.textSecondary),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(LucideIcons.inbox, size: 36, color: zen.textMuted),
+                        const SizedBox(height: 10),
+                        Text(
+                          'No expenses found',
+                          style: AppTextStyles.bodyMedium(zen.textSecondary),
+                        ),
+                      ],
                     ),
                   ),
                 )
@@ -253,6 +266,7 @@ class ExpensesScreen extends StatelessWidget {
                       Divider(height: 1, color: zen.border),
                   itemBuilder: (_, index) => ExpenseTransactionTile(
                     expense: expenses[index],
+                    activeCurrency: currency,
                     onDelete: () => context.read<ExpensesBloc>().add(
                       DeleteExpense(expenses[index].id),
                     ),
@@ -270,6 +284,13 @@ class ExpensesScreen extends StatelessWidget {
     final currency = context.select<ProfileBloc, String>(
       (bloc) => bloc.state.profile.currency,
     );
+
+    final budgetTotal = state.convertedTotalBudget(toCurrency: currency);
+    final spentThisMonth = state.convertedSpentThisMonth(toCurrency: currency);
+    final remainingBudget = budgetTotal - spentThisMonth;
+    final budgetProgress = budgetTotal > 0
+        ? (spentThisMonth / budgetTotal).clamp(0.0, 1.0)
+        : 0.0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -295,21 +316,21 @@ class ExpensesScreen extends StatelessWidget {
               const SizedBox(height: 16),
               Text(
                 CurrencyService().formatMoney(
-                  amount: state.totalBudget,
+                  amount: budgetTotal,
                   currency: currency,
                 ),
                 style: AppTextStyles.displayMedium(zen.textPrimary),
               ),
               const SizedBox(height: 5),
               Text(
-                '${CurrencyService().formatMoney(amount: state.spentThisMonth, currency: currency)} spent · ${CurrencyService().formatMoney(amount: state.remainingBudget, currency: currency)} remaining',
+                '${CurrencyService().formatMoney(amount: spentThisMonth, currency: currency)} spent · ${CurrencyService().formatMoney(amount: remainingBudget, currency: currency)} remaining',
                 style: AppTextStyles.bodySmall(zen.textSecondary),
               ),
               const SizedBox(height: 14),
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: LinearProgressIndicator(
-                  value: state.budgetProgress,
+                  value: budgetProgress,
                   minHeight: 10,
                   backgroundColor: zen.subtleFill,
                   valueColor: AlwaysStoppedAnimation(zen.accent),
@@ -317,7 +338,7 @@ class ExpensesScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                '${(state.budgetProgress * 100).round()}% used this month',
+                '${(budgetProgress * 100).round()}% used this month',
                 style: AppTextStyles.labelSmall(zen.accent),
               ),
             ],
@@ -336,6 +357,7 @@ class ExpensesScreen extends StatelessWidget {
           separatorBuilder: (_, _) => const SizedBox(height: 10),
           itemBuilder: (_, index) => CategoryBudgetTile(
             budget: state.budgets[index],
+            activeCurrency: currency,
             onEdit: () => _editBudget(context, state.budgets[index]),
           ),
         ),
@@ -343,12 +365,15 @@ class ExpensesScreen extends StatelessWidget {
     );
   }
 
-  void _editBudget(BuildContext context, CategoryBudgetItem item) =>
-      EditBudgetBottomSheet.show(
-        context,
-        budget: item,
-        onSaved: (amount) => context.read<ExpensesBloc>().add(
-          UpdateBudget(item.category, amount),
-        ),
-      );
+  void _editBudget(BuildContext context, CategoryBudgetItem item) {
+    final currency = context.read<ProfileBloc>().state.profile.currency;
+    EditBudgetBottomSheet.show(
+      context,
+      budget: item,
+      currency: currency,
+      onSaved: (amount) => context.read<ExpensesBloc>().add(
+        UpdateBudget(item.category, amount),
+      ),
+    );
+  }
 }

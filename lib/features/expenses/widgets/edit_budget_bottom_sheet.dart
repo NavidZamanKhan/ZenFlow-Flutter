@@ -10,22 +10,30 @@ import '../models/category_budget_item.dart';
 class EditBudgetBottomSheet extends StatefulWidget {
   final CategoryBudgetItem budget;
   final ValueChanged<double> onSaved;
+  final String currency;
+
   const EditBudgetBottomSheet({
     super.key,
     required this.budget,
     required this.onSaved,
+    this.currency = 'BDT',
   });
 
   static Future<void> show(
     BuildContext context, {
     required CategoryBudgetItem budget,
     required ValueChanged<double> onSaved,
+    String currency = 'BDT',
   }) =>
       showModalBottomSheet(
         context: context,
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
-        builder: (_) => EditBudgetBottomSheet(budget: budget, onSaved: onSaved),
+        builder: (_) => EditBudgetBottomSheet(
+          budget: budget,
+          onSaved: onSaved,
+          currency: currency,
+        ),
       );
 
   @override
@@ -54,8 +62,8 @@ class _EditBudgetBottomSheetState extends State<EditBudgetBottomSheet> {
   Widget build(BuildContext context) {
     final zen = context.zenColors;
     final currencySymbol =
-        CurrencyService.metadata[widget.budget.currency]?.symbol ??
-            widget.budget.currency;
+        CurrencyService.metadata[widget.currency]?.symbol ??
+            widget.currency;
 
     return Container(
       padding: EdgeInsets.fromLTRB(

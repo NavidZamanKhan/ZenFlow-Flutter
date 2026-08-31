@@ -61,13 +61,13 @@ class ProfileService {
       }
     } catch (_) {}
 
-    // 2. Fetch cloud budget currency independently to guarantee 100% real-time sync across devices
+    // 2. Fetch cloud budget currency independently when initializing
     try {
       final budgetResponse = await _apiClient.dio.get(ApiEndpoints.budget);
       if (budgetResponse.statusCode == 200 && budgetResponse.data is Map) {
         final bData = budgetResponse.data as Map;
         final cloudCur = bData['currency']?.toString();
-        if (cloudCur != null && cloudCur.isNotEmpty) {
+        if (cloudCur != null && cloudCur.isNotEmpty && localProfile == null) {
           activeCurrency = cloudCur;
         }
       }

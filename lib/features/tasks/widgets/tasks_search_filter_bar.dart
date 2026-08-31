@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/zenflow_theme.dart';
 import '../../../core/widgets/zen_text_field.dart';
 import '../models/task_filter.dart';
+import 'tasks_status_segmented_bar.dart';
 
 class TasksSearchFilterBar extends StatelessWidget {
   final TextEditingController searchController;
@@ -28,6 +30,26 @@ class TasksSearchFilterBar extends StatelessWidget {
     required this.onCategorySelected,
   });
 
+  Color _getCategoryColor(String category) {
+    switch (category.toLowerCase()) {
+      case 'personal':
+        return const Color(0xFF8B5CF6);
+      case 'shopping':
+        return const Color(0xFFEC4899);
+      case 'family':
+        return const Color(0xFFF59E0B);
+      case 'work':
+        return const Color(0xFF10B981);
+      case 'meetings':
+        return const Color(0xFF6366F1);
+      case 'finance':
+        return const Color(0xFF14B8A6);
+      case 'general':
+      default:
+        return const Color(0xFF3B82F6);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final zen = context.zenColors;
@@ -35,7 +57,7 @@ class TasksSearchFilterBar extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Search Input Field
+        // 1. Search Input Field
         ZenTextField(
           controller: searchController,
           hintText: 'Search tasks...',
@@ -53,140 +75,83 @@ class TasksSearchFilterBar extends StatelessWidget {
         ),
         const SizedBox(height: 12),
 
-        // Status Filter Pills (Horizontal scrolling)
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          physics: const BouncingScrollPhysics(),
-          child: Row(
-            children: [
-              _StatusPill(
-                label: 'All',
-                isSelected: selectedStatus == TaskStatusFilter.all,
-                onTap: () => onStatusSelected(TaskStatusFilter.all),
-              ),
-              const SizedBox(width: 8),
-              _StatusPill(
-                label: 'Pending',
-                isSelected: selectedStatus == TaskStatusFilter.pending,
-                onTap: () => onStatusSelected(TaskStatusFilter.pending),
-              ),
-              const SizedBox(width: 8),
-              _StatusPill(
-                label: 'Overdue',
-                isSelected: selectedStatus == TaskStatusFilter.overdue,
-                onTap: () => onStatusSelected(TaskStatusFilter.overdue),
-              ),
-              const SizedBox(width: 8),
-              _StatusPill(
-                label: 'Completed',
-                isSelected: selectedStatus == TaskStatusFilter.completed,
-                onTap: () => onStatusSelected(TaskStatusFilter.completed),
-              ),
-              const SizedBox(width: 12),
+        // 2. Apple / Linear Solid Segmented Track [ All | Pending | Overdue | Completed ]
+        TasksStatusSegmentedBar(
+          selectedStatus: selectedStatus,
+          onStatusChanged: onStatusSelected,
+        ),
+        const SizedBox(height: 12),
 
-              // Category Divider
-              Container(
-                width: 1,
-                height: 20,
-                color: zen.border,
-              ),
-              const SizedBox(width: 12),
+        // 3. Category Filter Chips with Color Dots
+        if (categories.isNotEmpty)
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            child: Row(
+              children: categories.map((cat) {
+                final isAll = cat == 'All';
+                final isSelected =
+                    (selectedCategory == null && isAll) || (selectedCategory == cat);
+                final catColor = _getCategoryColor(cat);
 
-              // Category Pills
-              ...categories.map((cat) {
-                final isSelected = (selectedCategory == null && cat == 'All') ||
-                    (selectedCategory == cat);
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
-                  child: _CategoryPill(
-                    label: cat,
-                    isSelected: isSelected,
-                    onTap: () => onCategorySelected(cat == 'All' ? null : cat),
+                  child: GestureDetector(
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      onCategorySelected(isAll ? null : cat);
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6.5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? (zen.isDark ? zen.accentSoft : zen.accentLightBg)
+                            : zen.subtleFill,
+                        borderRadius: BorderRadius.circular(100),
+                        border: Border.all(
+                          color: isSelected
+                              ? zen.accent
+                              : zen.border.withValues(alpha: 0.6),
+                          width: isSelected ? 1.2 : 1,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (!isAll) ...[
+                            Container(
+                              width: 6.5,
+                              height: 6.5,
+                              decoration: BoxDecoration(
+                                color: catColor,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                          ],
+                          Text(
+                            cat,
+                            style: AppTextStyles.labelSmall(
+                              isSelected ? zen.accent : zen.textSecondary,
+                            ).copyWith(
+                              fontWeight: isSelected
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 );
-              }),
-            ],
+              }).toList(),
+            ),
           ),
-        ),
       ],
-    );
-  }
-}
-
-class _StatusPill extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _StatusPill({
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final zen = context.zenColors;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-        decoration: BoxDecoration(
-          color: isSelected ? zen.accent : zen.subtleFill,
-          borderRadius: BorderRadius.circular(100),
-          border: Border.all(
-            color: isSelected ? zen.accent : zen.border,
-            width: 1,
-          ),
-        ),
-        child: Text(
-          label,
-          style: AppTextStyles.labelSmall(
-            isSelected ? Colors.white : zen.textSecondary,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CategoryPill extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _CategoryPill({
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final zen = context.zenColors;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-        decoration: BoxDecoration(
-          color: isSelected ? (zen.isDark ? zen.accentSoft : zen.accentLightBg) : Colors.transparent,
-          borderRadius: BorderRadius.circular(100),
-          border: Border.all(
-            color: isSelected ? zen.accent : zen.border.withValues(alpha: 0.6),
-            width: 1,
-          ),
-        ),
-        child: Text(
-          label,
-          style: AppTextStyles.labelSmall(
-            isSelected ? zen.accent : zen.textMuted,
-          ),
-        ),
-      ),
     );
   }
 }

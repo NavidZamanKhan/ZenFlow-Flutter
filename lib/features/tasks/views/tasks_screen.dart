@@ -162,6 +162,9 @@ class _TasksScreenState extends State<TasksScreen> {
                               onToggle: () {
                                 context.read<TasksBloc>().add(ToggleTaskEvent(task.id));
                               },
+                              onDelete: () {
+                                context.read<TasksBloc>().add(DeleteTaskEvent(task.id));
+                              },
                               onTap: () {
                                 TaskDetailBottomSheet.show(
                                   context,

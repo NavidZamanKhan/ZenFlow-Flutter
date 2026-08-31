@@ -23,9 +23,10 @@ class ExpensesService {
 
   Future<ExpenseItem> createExpense(ExpenseItem expense) async {
     try {
+      final payload = expense.toJson(includeId: false);
       final response = await _apiClient.dio.post(
         ApiEndpoints.expenses,
-        data: expense.toJson(),
+        data: payload,
       );
       if (response.data is Map) {
         return ExpenseItem.fromJson(
@@ -35,7 +36,7 @@ class ExpensesService {
       throw Exception('Failed to create expense.');
     } on DioException catch (e) {
       throw Exception(
-        e.response?.data?['detail'] ?? 'Failed to save expense.',
+        e.response?.data?['detail'] ?? 'Failed to save expense on cloud.',
       );
     }
   }
@@ -45,7 +46,7 @@ class ExpensesService {
       await _apiClient.dio.delete('${ApiEndpoints.expenses}$id/');
     } on DioException catch (e) {
       throw Exception(
-        e.response?.data?['detail'] ?? 'Failed to delete expense.',
+        e.response?.data?['detail'] ?? 'Failed to delete expense from cloud.',
       );
     }
   }
@@ -63,7 +64,6 @@ class ExpensesService {
             : <String, dynamic>{};
         final currency = data['currency']?.toString() ?? 'BDT';
 
-        // Calculate spent amount per category from live expenses
         final spentMap = <String, double>{};
         for (final exp in expenses) {
           spentMap[exp.category] =
@@ -85,7 +85,6 @@ class ExpensesService {
           );
         });
 
-        // Add standard categories if not present in budget
         const defaultCats = [
           'Bills',
           'Food',
@@ -98,7 +97,8 @@ class ExpensesService {
           'Travel',
         ];
         for (final cat in defaultCats) {
-          if (!items.any((i) => i.category.toLowerCase() == cat.toLowerCase())) {
+          if (!items
+              .any((i) => i.category.toLowerCase() == cat.toLowerCase())) {
             items.add(
               CategoryBudgetItem(
                 category: cat,

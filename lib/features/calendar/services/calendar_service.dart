@@ -22,9 +22,10 @@ class CalendarService {
 
   Future<CalendarItem> createEvent(CalendarItem event) async {
     try {
+      final payload = event.toJson(includeId: false);
       final response = await _apiClient.dio.post(
         ApiEndpoints.events,
-        data: event.toJson(),
+        data: payload,
       );
       if (response.data is Map) {
         return CalendarItem.fromJson(
@@ -34,7 +35,7 @@ class CalendarService {
       throw Exception('Failed to create event.');
     } on DioException catch (e) {
       throw Exception(
-        e.response?.data?['detail'] ?? 'Failed to save event.',
+        e.response?.data?['detail'] ?? 'Failed to save event on cloud.',
       );
     }
   }
@@ -42,8 +43,10 @@ class CalendarService {
   Future<void> deleteEvent(String id) async {
     try {
       await _apiClient.dio.delete('${ApiEndpoints.events}$id/');
-    } catch (_) {
-      // Ignored
+    } on DioException catch (e) {
+      throw Exception(
+        e.response?.data?['detail'] ?? 'Failed to delete event from cloud.',
+      );
     }
   }
 

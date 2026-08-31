@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:intl/intl.dart';
 
@@ -19,6 +20,7 @@ class NewTaskBottomSheet extends StatefulWidget {
     BuildContext context, {
     required ValueChanged<TaskItem> onTaskCreated,
   }) {
+    HapticFeedback.mediumImpact();
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -85,20 +87,19 @@ class _NewTaskBottomSheetState extends State<NewTaskBottomSheet> {
     final title = _titleController.text.trim();
     if (title.isEmpty) return;
 
-    String? formattedTime;
+    String? normalizedTime;
     if (_selectedDueTime != null) {
-      final hour = _selectedDueTime!.hourOfPeriod == 0 ? 12 : _selectedDueTime!.hourOfPeriod;
-      final minute = _selectedDueTime!.minute.toString().padLeft(2, '0');
-      final period = _selectedDueTime!.period == DayPeriod.am ? 'AM' : 'PM';
-      formattedTime = '$hour:$minute $period';
+      final h = _selectedDueTime!.hour.toString().padLeft(2, '0');
+      final m = _selectedDueTime!.minute.toString().padLeft(2, '0');
+      normalizedTime = '$h:$m';
     }
 
     final newTask = TaskItem(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: 'temp-${DateTime.now().millisecondsSinceEpoch}',
       title: title,
       description: _descriptionController.text.trim(),
       dueDate: _selectedDueDate,
-      dueTime: formattedTime,
+      dueTime: normalizedTime,
       priority: _selectedPriority,
       category: _categoryController.text.trim().isNotEmpty
           ? _categoryController.text.trim()

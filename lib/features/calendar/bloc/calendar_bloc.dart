@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/cache/client_cache.dart';
 import '../../tasks/models/task_item.dart';
 import '../../tasks/services/tasks_service.dart';
 import '../models/calendar_item.dart';
@@ -8,15 +10,19 @@ import 'calendar_event.dart';
 import 'calendar_state.dart';
 
 class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
+  static const String _cacheKey = 'calendar_events_list';
   final CalendarService _calendarService;
   final TasksService _tasksService;
+  final ClientCache _cache;
 
   CalendarBloc({
     CalendarService? calendarService,
     TasksService? tasksService,
+    ClientCache? cache,
   })  : _calendarService = calendarService ?? CalendarService(),
         _tasksService = tasksService ?? TasksService(),
-        super(_initialState()) {
+        _cache = cache ?? ClientCache.instance,
+        super(_getInitialState(cache ?? ClientCache.instance)) {
     on<LoadCalendarEvent>(_onLoadCalendar);
     on<SelectDateEvent>(_onSelectDate);
     on<ChangeViewModeEvent>(_onChangeViewMode);
@@ -30,11 +36,28 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
     add(const LoadCalendarEvent());
   }
 
+  static CalendarState _getInitialState(ClientCache cache) {
+    final now = DateTime.now();
+    final cached = cache.get<List<CalendarItem>>(_cacheKey);
+    return CalendarState(
+      selectedDate: now,
+      focusedMonth: DateTime(now.year, now.month, 1),
+      viewMode: CalendarViewMode.month,
+      items: (cached != null && cached.isNotEmpty) ? cached : const [],
+      status: (cached != null && cached.isNotEmpty)
+          ? CalendarStatus.success
+          : CalendarStatus.initial,
+    );
+  }
+
   Future<void> _onLoadCalendar(
     LoadCalendarEvent event,
     Emitter<CalendarState> emit,
   ) async {
-    emit(state.copyWith(status: CalendarStatus.loading));
+    if (state.items.isEmpty) {
+      emit(state.copyWith(status: CalendarStatus.loading));
+    }
+
     try {
       final eventsFuture = _calendarService.getEvents();
       final tasksFuture = _tasksService.getTasks();
@@ -63,14 +86,11 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
         }
       }
 
-      if (mergedItems.isNotEmpty) {
-        emit(state.copyWith(
-          items: mergedItems,
-          status: CalendarStatus.success,
-        ));
-      } else {
-        emit(state.copyWith(status: CalendarStatus.success));
-      }
+      _cache.set(_cacheKey, mergedItems);
+      emit(state.copyWith(
+        items: mergedItems,
+        status: CalendarStatus.success,
+      ));
     } catch (_) {
       emit(state.copyWith(status: CalendarStatus.success));
     }
@@ -132,15 +152,24 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
     Emitter<CalendarState> emit,
   ) async {
     final previousItems = state.items;
-    emit(state.copyWith(items: [event.item, ...state.items]));
+    final tempId = event.item.id.startsWith('temp-')
+        ? event.item.id
+        : 'temp-${DateTime.now().millisecondsSinceEpoch}';
+    final optimisticItem = event.item.copyWith(id: tempId);
+
+    final optimisticList = [optimisticItem, ...state.items];
+    _cache.set(_cacheKey, optimisticList);
+    emit(state.copyWith(items: optimisticList, status: CalendarStatus.success));
 
     try {
-      final created = await _calendarService.createEvent(event.item);
+      final created = await _calendarService.createEvent(optimisticItem);
       final updated = state.items
-          .map((i) => i.id == event.item.id ? created : i)
+          .map((i) => i.id == tempId ? created : i)
           .toList();
+      _cache.set(_cacheKey, updated);
       emit(state.copyWith(items: updated));
     } catch (_) {
+      _cache.set(_cacheKey, previousItems);
       emit(state.copyWith(items: previousItems));
     }
   }
@@ -155,6 +184,7 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
       }
       return item;
     }).toList();
+    _cache.set(_cacheKey, updated);
     emit(state.copyWith(items: updated));
   }
 
@@ -165,77 +195,14 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
     final previousItems = state.items;
     final updated =
         state.items.where((i) => i.id != event.itemId).toList();
+    _cache.set(_cacheKey, updated);
     emit(state.copyWith(items: updated));
 
     try {
       await _calendarService.deleteEvent(event.itemId);
     } catch (_) {
+      _cache.set(_cacheKey, previousItems);
       emit(state.copyWith(items: previousItems));
     }
-  }
-
-  static CalendarState _initialState() {
-    final now = DateTime.now();
-    final year = now.year;
-    final month = now.month;
-
-    return CalendarState(
-      selectedDate: now,
-      focusedMonth: DateTime(year, month, 1),
-      viewMode: CalendarViewMode.month,
-      items: [
-        CalendarItem(
-          id: 'task_1',
-          title: 'Going on a walk',
-          description: 'Morning walk routine',
-          startDateTime: DateTime(year, month, 28, 4, 25),
-          isAllDay: false,
-          type: CalendarItemType.taskDeadline,
-          isCompleted: true,
-          category: 'Personal',
-        ),
-        CalendarItem(
-          id: 'task_2',
-          title: 'shouting at the home owner',
-          description: 'Discuss apartment maintenance and issues',
-          startDateTime: DateTime(year, month, 29),
-          isAllDay: true,
-          type: CalendarItemType.taskDeadline,
-          isCompleted: false,
-          category: 'General',
-        ),
-        CalendarItem(
-          id: 'task_3',
-          title: 'Have to buy pen and notebook',
-          description: 'Stationery shopping for work and notes',
-          startDateTime: DateTime(year, month, 30),
-          isAllDay: true,
-          type: CalendarItemType.taskDeadline,
-          isCompleted: false,
-          category: 'Shopping',
-        ),
-        CalendarItem(
-          id: 'task_4',
-          title: 'Going out',
-          description: 'Early morning outing',
-          startDateTime: DateTime(year, month, 30, 4, 30),
-          isAllDay: false,
-          type: CalendarItemType.taskDeadline,
-          isCompleted: false,
-          category: 'Personal',
-        ),
-        CalendarItem(
-          id: 'task_5',
-          title: 'Visiting my aunt at the hospital',
-          description: 'Hospital visit and checkup',
-          startDateTime: DateTime(year, month, 31),
-          isAllDay: true,
-          type: CalendarItemType.taskDeadline,
-          isCompleted: true,
-          category: 'Family',
-        ),
-      ],
-      status: CalendarStatus.initial,
-    );
   }
 }

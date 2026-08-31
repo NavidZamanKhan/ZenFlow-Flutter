@@ -21,35 +21,33 @@ class TasksService {
 
   Future<TaskItem> createTask(TaskItem task) async {
     try {
+      final payload = task.toJson(includeId: false);
       final response = await _apiClient.dio.post(
         ApiEndpoints.tasks,
-        data: task.toJson(),
+        data: payload,
       );
       if (response.data is Map) {
         return TaskItem.fromJson(Map<String, dynamic>.from(response.data as Map));
       }
       throw Exception('Failed to create task.');
     } on DioException catch (e) {
-      throw Exception(
-        e.response?.data?['detail'] ?? 'Failed to save task.',
-      );
+      throw Exception(_extractErrorMessage(e, 'Failed to save task on cloud.'));
     }
   }
 
   Future<TaskItem> updateTask(TaskItem task) async {
     try {
+      final payload = task.toJson(includeId: false);
       final response = await _apiClient.dio.patch(
         '${ApiEndpoints.tasks}${task.id}/',
-        data: task.toJson(),
+        data: payload,
       );
       if (response.data is Map) {
         return TaskItem.fromJson(Map<String, dynamic>.from(response.data as Map));
       }
       return task;
     } on DioException catch (e) {
-      throw Exception(
-        e.response?.data?['detail'] ?? 'Failed to update task.',
-      );
+      throw Exception(_extractErrorMessage(e, 'Failed to update task on cloud.'));
     }
   }
 
@@ -59,16 +57,16 @@ class TasksService {
         '${ApiEndpoints.tasks}$id/',
         data: {'completed': completed},
       );
-    } catch (_) {
-      // Ignored
+    } on DioException catch (e) {
+      throw Exception(_extractErrorMessage(e, 'Failed to sync task status.'));
     }
   }
 
   Future<void> deleteTask(String id) async {
     try {
       await _apiClient.dio.delete('${ApiEndpoints.tasks}$id/');
-    } catch (_) {
-      // Ignored
+    } on DioException catch (e) {
+      throw Exception(_extractErrorMessage(e, 'Failed to delete task from cloud.'));
     }
   }
 
@@ -89,5 +87,23 @@ class TasksService {
       }
     }
     return [];
+  }
+
+  String _extractErrorMessage(DioException e, String fallback) {
+    if (e.response?.data != null) {
+      final data = e.response!.data;
+      if (data is Map) {
+        final messages = <String>[];
+        data.forEach((k, v) {
+          if (v is List) {
+            messages.add('$k: ${v.join(', ')}');
+          } else if (v is String) {
+            messages.add(v);
+          }
+        });
+        if (messages.isNotEmpty) return messages.join('\n');
+      }
+    }
+    return e.message ?? fallback;
   }
 }

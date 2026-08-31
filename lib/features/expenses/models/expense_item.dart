@@ -45,15 +45,17 @@ class ExpenseItem extends Equatable {
     );
   }
 
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toJson({bool includeId = true}) {
     return {
-      'title': title,
+      if (includeId && id.isNotEmpty && !id.startsWith('temp-')) 'id': id,
+      'title': title.trim(),
       'amount': amount,
       'currency': currency,
-      'category': category,
-      'date': '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
+      'category': category.trim().isNotEmpty ? category.trim() : 'Others',
+      'date':
+          '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
       'paymentMethod': paymentMethod,
-      if (notes != null && notes!.isNotEmpty) 'notes': notes,
+      if (notes != null && notes!.trim().isNotEmpty) 'notes': notes!.trim(),
       'isRecurring': isRecurring,
       if (isRecurring && recurringInterval != null)
         'recurringInterval': recurringInterval,

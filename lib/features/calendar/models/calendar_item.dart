@@ -61,10 +61,11 @@ class CalendarItem extends Equatable {
     );
   }
 
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toJson({bool includeId = true}) {
     return {
-      'title': title,
-      'description': description,
+      if (includeId && id.isNotEmpty && !id.startsWith('temp-')) 'id': id,
+      'title': title.trim(),
+      'description': description.trim(),
       'start_datetime': startDateTime.toIso8601String(),
       if (endDateTime != null) 'end_datetime': endDateTime!.toIso8601String(),
       'all_day': isAllDay,

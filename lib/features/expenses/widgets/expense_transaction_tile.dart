@@ -104,7 +104,7 @@ class ExpenseTransactionTile extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text('-$money', style: AppTextStyles.labelLarge(zen.textPrimary)),
+              Text(money, style: AppTextStyles.labelLarge(zen.textPrimary)),
               if (onDelete != null)
                 InkWell(
                   onTap: onDelete,

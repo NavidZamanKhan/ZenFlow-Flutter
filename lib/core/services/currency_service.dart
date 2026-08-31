@@ -224,8 +224,7 @@ class CurrencyService {
     final fromRate = r[fromCurrency] ?? 1.0;
     final toRate = r[toCurrency] ?? 1.0;
     final inUsd = amount / fromRate;
-    final rawConverted = inUsd * toRate;
-    return smartConvertCurrency(rawConverted, toCurrency: toCurrency);
+    return inUsd * toRate;
   }
 
   /// Smart currency conversion that eliminates two-way floating point rounding drift

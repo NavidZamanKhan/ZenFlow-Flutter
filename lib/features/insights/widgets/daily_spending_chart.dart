@@ -1,6 +1,8 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/zenflow_theme.dart';
@@ -20,6 +22,7 @@ class _DailySpendingChartState extends State<DailySpendingChart>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
+  int? _hoveredIndex;
 
   @override
   void initState() {
@@ -45,35 +48,90 @@ class _DailySpendingChartState extends State<DailySpendingChart>
   Widget build(BuildContext context) {
     final zen = context.zenColors;
 
+    final selectedPoint =
+        _hoveredIndex != null && _hoveredIndex! < widget.points.length
+            ? widget.points[_hoveredIndex!]
+            : null;
+
     return ZenCard(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Daily spending', style: AppTextStyles.headingSmall(zen.textPrimary)),
-          const SizedBox(height: 2),
-          Text(
-            'Day by day activity this month',
-            style: AppTextStyles.labelSmall(zen.textSecondary),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Daily spending',
+                        style: AppTextStyles.headingSmall(zen.textPrimary)),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Day by day activity this month',
+                      style: AppTextStyles.labelSmall(zen.textSecondary),
+                    ),
+                  ],
+                ),
+              ),
+              if (selectedPoint != null)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: zen.accent.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(100),
+                    border: Border.all(
+                      color: zen.accent.withValues(alpha: 0.35),
+                    ),
+                  ),
+                  child: Text(
+                    'Day ${selectedPoint.day} · ৳${NumberFormat('#,##0').format(selectedPoint.amount)}',
+                    style: AppTextStyles.labelSmall(zen.accent).copyWith(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 11,
+                    ),
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: 16),
 
-          // Spline Line Chart Canvas
-          SizedBox(
-            height: 140,
-            width: double.infinity,
-            child: AnimatedBuilder(
-              animation: _animation,
-              builder: (context, _) => CustomPaint(
-                painter: _SplineChartPainter(
-                  points: widget.points,
-                  progress: _animation.value,
-                  lineColor: zen.accent,
-                  fillColor: zen.accent,
-                  gridColor: zen.border.withValues(alpha: 0.4),
+          // Spline Line Chart Canvas with Touch Scrubber
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final width = constraints.maxWidth;
+              const height = 130.0;
+
+              return GestureDetector(
+                onPanDown: (details) =>
+                    _handleTouch(details.localPosition.dx, width),
+                onPanUpdate: (details) =>
+                    _handleTouch(details.localPosition.dx, width),
+                onPanEnd: (_) => setState(() => _hoveredIndex = null),
+                onPanCancel: () => setState(() => _hoveredIndex = null),
+                onTapDown: (details) =>
+                    _handleTouch(details.localPosition.dx, width),
+                onTapUp: (_) => setState(() => _hoveredIndex = null),
+                child: SizedBox(
+                  height: height,
+                  width: width,
+                  child: AnimatedBuilder(
+                    animation: _animation,
+                    builder: (context, _) => CustomPaint(
+                      painter: _SplineChartPainter(
+                        points: widget.points,
+                        progress: _animation.value,
+                        hoveredIndex: _hoveredIndex,
+                        lineColor: zen.accent,
+                        fillColor: zen.accent,
+                        gridColor: zen.border.withValues(alpha: 0.4),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-            ),
+              );
+            },
           ),
           const SizedBox(height: 10),
 
@@ -94,11 +152,22 @@ class _DailySpendingChartState extends State<DailySpendingChart>
       ),
     );
   }
+
+  void _handleTouch(double localX, double totalWidth) {
+    if (widget.points.isEmpty) return;
+    final step = totalWidth / max(1, widget.points.length - 1);
+    final index = (localX / step).round().clamp(0, widget.points.length - 1);
+    if (_hoveredIndex != index) {
+      HapticFeedback.selectionClick();
+      setState(() => _hoveredIndex = index);
+    }
+  }
 }
 
 class _SplineChartPainter extends CustomPainter {
   final List<DailySpendingPoint> points;
   final double progress;
+  final int? hoveredIndex;
   final Color lineColor;
   final Color fillColor;
   final Color gridColor;
@@ -106,6 +175,7 @@ class _SplineChartPainter extends CustomPainter {
   _SplineChartPainter({
     required this.points,
     required this.progress,
+    required this.hoveredIndex,
     required this.lineColor,
     required this.fillColor,
     required this.gridColor,
@@ -130,7 +200,7 @@ class _SplineChartPainter extends CustomPainter {
 
     final offsets = <Offset>[];
     for (int i = 0; i < points.length; i++) {
-      final x = (size.width / (points.length - 1)) * i;
+      final x = (size.width / max(1, points.length - 1)) * i;
       final normalizedY = (points[i].amount / effectiveMax) * progress;
       final y = size.height - (normalizedY * size.height);
       offsets.add(Offset(x, y));
@@ -168,40 +238,64 @@ class _SplineChartPainter extends CustomPainter {
     // Draw Line Stroke
     final strokePaint = Paint()
       ..color = lineColor
-      ..strokeWidth = 2.2
+      ..strokeWidth = 2.4
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
     canvas.drawPath(path, strokePaint);
 
-    // Highlight Peak Point (e.g. Day 5)
-    var peakIndex = 0;
-    var peakVal = 0.0;
-    for (int i = 0; i < points.length; i++) {
-      if (points[i].amount > peakVal) {
-        peakVal = points[i].amount;
-        peakIndex = i;
-      }
-    }
+    // Highlight Hovered or Peak Point
+    final targetIndex = hoveredIndex ?? _getPeakIndex(points);
+    if (targetIndex >= 0 && targetIndex < offsets.length) {
+      final targetOffset = offsets[targetIndex];
 
-    if (peakVal > 0 && peakIndex < offsets.length) {
-      final peakOffset = offsets[peakIndex];
+      if (hoveredIndex != null) {
+        // Vertical guide line
+        canvas.drawLine(
+          Offset(targetOffset.dx, 0),
+          Offset(targetOffset.dx, size.height),
+          Paint()
+            ..color = lineColor.withValues(alpha: 0.3)
+            ..strokeWidth = 1.2,
+        );
+      }
+
       // Outer halo
       canvas.drawCircle(
-        peakOffset,
-        6.5,
+        targetOffset,
+        hoveredIndex != null ? 8.0 : 6.5,
         Paint()..color = lineColor.withValues(alpha: 0.3),
       );
       // Inner dot
       canvas.drawCircle(
-        peakOffset,
+        targetOffset,
         3.5,
         Paint()..color = lineColor,
+      );
+      // White center
+      canvas.drawCircle(
+        targetOffset,
+        1.5,
+        Paint()..color = Colors.white,
       );
     }
   }
 
+  int _getPeakIndex(List<DailySpendingPoint> pts) {
+    var peakIndex = 0;
+    var peakVal = 0.0;
+    for (int i = 0; i < pts.length; i++) {
+      if (pts[i].amount > peakVal) {
+        peakVal = pts[i].amount;
+        peakIndex = i;
+      }
+    }
+    return peakIndex;
+  }
+
   @override
   bool shouldRepaint(covariant _SplineChartPainter oldDelegate) =>
-      oldDelegate.progress != progress || oldDelegate.points != points;
+      oldDelegate.progress != progress ||
+      oldDelegate.points != points ||
+      oldDelegate.hoveredIndex != hoveredIndex;
 }

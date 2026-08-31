@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import 'insights_state.dart';
+
 abstract class InsightsEvent extends Equatable {
   const InsightsEvent();
 
@@ -13,4 +15,13 @@ class LoadInsightsEvent extends InsightsEvent {
 
 class RefreshInsightsEvent extends InsightsEvent {
   const RefreshInsightsEvent();
+}
+
+class TimeRangeChangedEvent extends InsightsEvent {
+  final InsightsTimeRange timeRange;
+
+  const TimeRangeChangedEvent(this.timeRange);
+
+  @override
+  List<Object?> get props => [timeRange];
 }

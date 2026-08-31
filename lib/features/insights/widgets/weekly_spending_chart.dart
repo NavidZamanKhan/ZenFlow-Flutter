@@ -1,6 +1,8 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/zenflow_theme.dart';
@@ -19,6 +21,7 @@ class _WeeklySpendingChartState extends State<WeeklySpendingChart>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
+  int? _selectedBarIndex;
 
   static const _days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -31,7 +34,7 @@ class _WeeklySpendingChartState extends State<WeeklySpendingChart>
     );
     _animation = CurvedAnimation(
       parent: _controller,
-      curve: Curves.easeOutBack,
+      curve: Curves.easeOutCubic,
     );
     _controller.forward();
   }
@@ -50,16 +53,52 @@ class _WeeklySpendingChartState extends State<WeeklySpendingChart>
         : widget.weeklyAmounts.reduce(max);
     final effectiveMax = maxAmount > 0 ? maxAmount : 1000.0;
 
+    final selectedAmount = _selectedBarIndex != null &&
+            _selectedBarIndex! < widget.weeklyAmounts.length
+        ? widget.weeklyAmounts[_selectedBarIndex!]
+        : null;
+
     return ZenCard(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Weekly spending', style: AppTextStyles.headingSmall(zen.textPrimary)),
-          const SizedBox(height: 2),
-          Text(
-            'The last seven calendar days',
-            style: AppTextStyles.labelSmall(zen.textSecondary),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Weekly spending',
+                        style: AppTextStyles.headingSmall(zen.textPrimary)),
+                    const SizedBox(height: 2),
+                    Text(
+                      'The last seven calendar days',
+                      style: AppTextStyles.labelSmall(zen.textSecondary),
+                    ),
+                  ],
+                ),
+              ),
+              if (selectedAmount != null)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: zen.accent.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(100),
+                    border: Border.all(
+                      color: zen.accent.withValues(alpha: 0.35),
+                    ),
+                  ),
+                  child: Text(
+                    '${_days[_selectedBarIndex!]} · ৳${NumberFormat('#,##0').format(selectedAmount)}',
+                    style: AppTextStyles.labelSmall(zen.accent).copyWith(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 11,
+                    ),
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: 20),
 
@@ -76,42 +115,87 @@ class _WeeklySpendingChartState extends State<WeeklySpendingChart>
                     final amount = index < widget.weeklyAmounts.length
                         ? widget.weeklyAmounts[index]
                         : 0.0;
-                    final heightFactor = (amount / effectiveMax) * _animation.value;
+                    final heightFactor =
+                        (amount / effectiveMax) * _animation.value;
                     final isPeak = amount > 0 && amount == maxAmount;
+                    final isSelected = _selectedBarIndex == index;
 
-                    return Column(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        // Vertical Bar
-                        Expanded(
-                          child: Align(
-                            alignment: Alignment.bottomCenter,
-                            child: Container(
-                              width: 22,
-                              height: max(4.0, 95.0 * heightFactor),
-                              decoration: BoxDecoration(
-                                color: isPeak ? zen.accent : zen.subtleFill,
-                                borderRadius: BorderRadius.circular(6),
-                                border: isPeak
-                                    ? null
-                                    : Border.all(color: zen.border),
+                    return GestureDetector(
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        setState(() {
+                          _selectedBarIndex =
+                              _selectedBarIndex == index ? null : index;
+                        });
+                      },
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          // Vertical Bar
+                          Expanded(
+                            child: Align(
+                              alignment: Alignment.bottomCenter,
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                width: isSelected ? 26 : 22,
+                                height: max(4.0, 92.0 * heightFactor),
+                                decoration: BoxDecoration(
+                                  gradient: (isPeak || isSelected)
+                                      ? LinearGradient(
+                                          begin: Alignment.topCenter,
+                                          end: Alignment.bottomCenter,
+                                          colors: [
+                                            zen.accent,
+                                            zen.accent.withValues(alpha: 0.8),
+                                          ],
+                                        )
+                                      : null,
+                                  color: (isPeak || isSelected)
+                                      ? null
+                                      : zen.subtleFill,
+                                  borderRadius: BorderRadius.circular(7),
+                                  border: (isPeak || isSelected)
+                                      ? Border.all(
+                                          color:
+                                              zen.accent.withValues(alpha: 0.5),
+                                          width: 1.5,
+                                        )
+                                      : Border.all(
+                                          color:
+                                              zen.border.withValues(alpha: 0.7),
+                                        ),
+                                  boxShadow: (isPeak || isSelected)
+                                      ? [
+                                          BoxShadow(
+                                            color: zen.accent
+                                                .withValues(alpha: 0.25),
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ]
+                                      : null,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 8),
+                          const SizedBox(height: 8),
 
-                        // Day Name
-                        Text(
-                          _days[index],
-                          style: AppTextStyles.labelSmall(
-                            isPeak ? zen.accent : zen.textMuted,
-                          ).copyWith(
-                            fontSize: 10.5,
-                            fontWeight: isPeak ? FontWeight.w700 : FontWeight.w500,
+                          // Day Name
+                          Text(
+                            _days[index],
+                            style: AppTextStyles.labelSmall(
+                              (isPeak || isSelected)
+                                  ? zen.accent
+                                  : zen.textMuted,
+                            ).copyWith(
+                              fontSize: 10.5,
+                              fontWeight: (isPeak || isSelected)
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     );
                   }),
                 );

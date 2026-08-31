@@ -9,6 +9,7 @@ import '../widgets/animated_donut_chart.dart';
 import '../widgets/daily_spending_chart.dart';
 import '../widgets/insights_header.dart';
 import '../widgets/insights_metrics_grid.dart';
+import '../widgets/insights_time_range_bar.dart';
 import '../widgets/smart_trends_card.dart';
 import '../widgets/spending_breakdown_card.dart';
 import '../widgets/weekly_spending_chart.dart';
@@ -32,7 +33,9 @@ class InsightsScreen extends StatelessWidget {
                 color: zen.accent,
                 backgroundColor: zen.card,
                 onRefresh: () async {
-                  context.read<InsightsBloc>().add(const RefreshInsightsEvent());
+                  context
+                      .read<InsightsBloc>()
+                      .add(const RefreshInsightsEvent());
                   await Future.delayed(const Duration(milliseconds: 650));
                 },
                 child: ListView(
@@ -43,6 +46,17 @@ class InsightsScreen extends StatelessWidget {
                   children: [
                     // Header (Title, Subtitle, BDT badge)
                     const InsightsHeader(),
+                    const SizedBox(height: 16),
+
+                    // Time-Range Segmented Switcher
+                    InsightsTimeRangeBar(
+                      activeRange: state.timeRange,
+                      onRangeChanged: (newRange) {
+                        context
+                            .read<InsightsBloc>()
+                            .add(TimeRangeChangedEvent(newRange));
+                      },
+                    ),
                     const SizedBox(height: 20),
 
                     // 4 Metrics Summary

@@ -19,6 +19,7 @@ class InsightsBloc extends Bloc<InsightsEvent, InsightsState> {
         super(InsightsState.initial()) {
     on<LoadInsightsEvent>(_onLoad);
     on<RefreshInsightsEvent>(_onRefresh);
+    on<TimeRangeChangedEvent>(_onTimeRangeChanged);
 
     add(const LoadInsightsEvent());
   }
@@ -28,31 +29,57 @@ class InsightsBloc extends Bloc<InsightsEvent, InsightsState> {
     Emitter<InsightsState> emit,
   ) async {
     emit(state.copyWith(status: InsightsStatus.loading));
-    await _computeAndEmitInsights(emit);
+    await _computeAndEmitInsights(emit, state.timeRange);
   }
 
   Future<void> _onRefresh(
     RefreshInsightsEvent event,
     Emitter<InsightsState> emit,
   ) async {
-    await _computeAndEmitInsights(emit);
+    await _computeAndEmitInsights(emit, state.timeRange);
   }
 
-  Future<void> _computeAndEmitInsights(Emitter<InsightsState> emit) async {
-    try {
-      final expenses = await _expensesService.getExpenses();
-      final budgets = await _expensesService.getBudget(expenses);
+  Future<void> _onTimeRangeChanged(
+    TimeRangeChangedEvent event,
+    Emitter<InsightsState> emit,
+  ) async {
+    emit(state.copyWith(timeRange: event.timeRange));
+    await _computeAndEmitInsights(emit, event.timeRange);
+  }
 
-      if (expenses.isEmpty) {
+  Future<void> _computeAndEmitInsights(
+    Emitter<InsightsState> emit,
+    InsightsTimeRange range,
+  ) async {
+    try {
+      final allExpenses = await _expensesService.getExpenses();
+      final budgets = await _expensesService.getBudget(allExpenses);
+
+      final now = DateTime.now();
+      final filteredExpenses = allExpenses.where((exp) {
+        switch (range) {
+          case InsightsTimeRange.thisMonth:
+            return exp.date.year == now.year && exp.date.month == now.month;
+          case InsightsTimeRange.last30Days:
+            return exp.date.isAfter(now.subtract(const Duration(days: 30)));
+          case InsightsTimeRange.allTime:
+            return true;
+        }
+      }).toList();
+
+      if (filteredExpenses.isEmpty && allExpenses.isEmpty) {
         emit(state.copyWith(status: InsightsStatus.success));
         return;
       }
+
+      final targetExpenses =
+          filteredExpenses.isNotEmpty ? filteredExpenses : allExpenses;
 
       // 1. Category Segments
       final categoryTotals = <String, double>{};
       double totalSpent = 0.0;
 
-      for (final exp in expenses) {
+      for (final exp in targetExpenses) {
         categoryTotals[exp.category] =
             (categoryTotals[exp.category] ?? 0.0) + exp.amount;
         totalSpent += exp.amount;
@@ -71,7 +98,7 @@ class InsightsBloc extends Bloc<InsightsEvent, InsightsState> {
 
       // 2. Payment Method Segments
       final paymentTotals = <String, double>{};
-      for (final exp in expenses) {
+      for (final exp in targetExpenses) {
         paymentTotals[exp.paymentMethod] =
             (paymentTotals[exp.paymentMethod] ?? 0.0) + exp.amount;
       }
@@ -89,7 +116,7 @@ class InsightsBloc extends Bloc<InsightsEvent, InsightsState> {
 
       // 3. Daily Spending Points (Sorted by day)
       final dailyMap = <int, double>{};
-      for (final exp in expenses) {
+      for (final exp in targetExpenses) {
         dailyMap[exp.date.day] = (dailyMap[exp.date.day] ?? 0.0) + exp.amount;
       }
 
@@ -103,7 +130,7 @@ class InsightsBloc extends Bloc<InsightsEvent, InsightsState> {
 
       // 4. Weekly Spending Breakdown (Mon..Sun amounts)
       final weeklyAmounts = <double>[0, 0, 0, 0, 0, 0, 0];
-      for (final exp in expenses) {
+      for (final exp in targetExpenses) {
         final dayOfWeek = (exp.date.weekday - 1).clamp(0, 6);
         weeklyAmounts[dayOfWeek] += exp.amount;
       }
@@ -168,7 +195,7 @@ class InsightsBloc extends Bloc<InsightsEvent, InsightsState> {
         totalSpending: totalSpent,
         spentThisMonth: totalSpent,
         dailyAverage: dailyAverage,
-        totalTransactions: expenses.length,
+        totalTransactions: targetExpenses.length,
         categorySegments: categorySegments,
         paymentSegments: paymentSegments,
         dailyPoints: dailyPoints.isNotEmpty ? dailyPoints : state.dailyPoints,

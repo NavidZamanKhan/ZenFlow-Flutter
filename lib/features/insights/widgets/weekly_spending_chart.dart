@@ -40,6 +40,14 @@ class _WeeklySpendingChartState extends State<WeeklySpendingChart>
   }
 
   @override
+  void didUpdateWidget(covariant WeeklySpendingChart oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.weeklyAmounts != widget.weeklyAmounts) {
+      _controller.forward(from: 0.0);
+    }
+  }
+
+  @override
   void dispose() {
     _controller.dispose();
     super.dispose();

@@ -18,7 +18,10 @@ class ProductivityCard extends StatefulWidget {
   State<ProductivityCard> createState() => _ProductivityCardState();
 }
 
-class _ProductivityCardState extends State<ProductivityCard> {
+class _ProductivityCardState extends State<ProductivityCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animController;
+  late Animation<double> _curveAnimation;
   int? _hoveredIndex;
 
   static const _dayLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -31,6 +34,34 @@ class _ProductivityCardState extends State<ProductivityCard> {
     'Saturday',
     'Sunday',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 950),
+    );
+    _curveAnimation = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOutCubic,
+    );
+    _animController.forward();
+  }
+
+  @override
+  void didUpdateWidget(covariant ProductivityCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.tasks != widget.tasks) {
+      _animController.forward(from: 0.0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -131,7 +162,7 @@ class _ProductivityCardState extends State<ProductivityCard> {
           ),
           const SizedBox(height: 16),
 
-          // Interactive Responsive Graph Area
+          // Interactive Responsive Graph Area with Rising Entrance Animation
           LayoutBuilder(
             builder: (context, constraints) {
               final chartWidth = constraints.maxWidth;
@@ -150,14 +181,18 @@ class _ProductivityCardState extends State<ProductivityCard> {
                 child: SizedBox(
                   height: chartHeight,
                   width: chartWidth,
-                  child: CustomPaint(
-                    painter: _DynamicWeeklyChartPainter(
-                      dailyCounts: stats.dailyCompleted,
-                      todayIndex: todayIndex,
-                      hoveredIndex: _hoveredIndex,
-                      accent: zen.accent,
-                      gridColor: zen.border,
-                      isDark: zen.isDark,
+                  child: AnimatedBuilder(
+                    animation: _curveAnimation,
+                    builder: (context, _) => CustomPaint(
+                      painter: _DynamicWeeklyChartPainter(
+                        dailyCounts: stats.dailyCompleted,
+                        todayIndex: todayIndex,
+                        hoveredIndex: _hoveredIndex,
+                        progress: _curveAnimation.value,
+                        accent: zen.accent,
+                        gridColor: zen.border,
+                        isDark: zen.isDark,
+                      ),
                     ),
                   ),
                 ),
@@ -296,6 +331,7 @@ class _DynamicWeeklyChartPainter extends CustomPainter {
   final List<int> dailyCounts;
   final int todayIndex;
   final int? hoveredIndex;
+  final double progress;
   final Color accent;
   final Color gridColor;
   final bool isDark;
@@ -304,6 +340,7 @@ class _DynamicWeeklyChartPainter extends CustomPainter {
     required this.dailyCounts,
     required this.todayIndex,
     required this.hoveredIndex,
+    required this.progress,
     required this.accent,
     required this.gridColor,
     required this.isDark,
@@ -333,7 +370,7 @@ class _DynamicWeeklyChartPainter extends CustomPainter {
       );
     }
 
-    // 2. Compute Responsive Normalized Points
+    // 2. Compute Responsive Normalized Points with Rising Progress
     final maxVal = (dailyCounts.isNotEmpty
             ? dailyCounts.reduce((a, b) => a > b ? a : b)
             : 0)
@@ -343,7 +380,7 @@ class _DynamicWeeklyChartPainter extends CustomPainter {
     for (int i = 0; i < 7; i++) {
       final x = leftPad + (i * (availableWidth / 6));
       final count = i < dailyCounts.length ? dailyCounts[i] : 0;
-      final ratio = count / maxVal;
+      final ratio = (count / maxVal) * progress;
       // Map ratio to vertical canvas bounds
       final y = bottomPad - (ratio * availableHeight * 0.85);
       points.add(Offset(x, y));
@@ -371,7 +408,7 @@ class _DynamicWeeklyChartPainter extends CustomPainter {
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          accent.withValues(alpha: isDark ? 0.26 : 0.18),
+          accent.withValues(alpha: (isDark ? 0.26 : 0.18) * progress),
           accent.withValues(alpha: 0.0),
         ],
       ).createShader(Rect.fromLTWH(0, topPad, size.width, availableHeight + 12));
@@ -408,7 +445,7 @@ class _DynamicWeeklyChartPainter extends CustomPainter {
 
       // Outer Pulsing Glow Circle
       final outerGlow = Paint()
-        ..color = accent.withValues(alpha: isDark ? 0.35 : 0.22);
+        ..color = accent.withValues(alpha: (isDark ? 0.35 : 0.22) * progress);
       canvas.drawCircle(p, hoveredIndex != null ? 10 : 8, outerGlow);
 
       // Inner Solid Accent Circle
@@ -441,6 +478,7 @@ class _DynamicWeeklyChartPainter extends CustomPainter {
       old.dailyCounts != dailyCounts ||
       old.todayIndex != todayIndex ||
       old.hoveredIndex != hoveredIndex ||
+      old.progress != progress ||
       old.accent != accent ||
       old.gridColor != gridColor ||
       old.isDark != isDark;

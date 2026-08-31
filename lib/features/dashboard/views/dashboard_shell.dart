@@ -100,13 +100,30 @@ class _DashboardShellBody extends StatelessWidget {
       );
 
   Widget _bodyFor(BuildContext context, DashboardState state) {
-    if (state.selectedTab == 0) return DashboardOverviewScreen(state: state);
-    if (state.selectedTab == 1) return const TasksScreen();
-    if (state.selectedTab == 2) return const CalendarScreen();
-    if (state.selectedTab == 3) return const ExpensesScreen();
-    if (state.selectedTab == 4) return const InsightsScreen();
+    if (state.selectedTab == 0) {
+      return DashboardOverviewScreen(
+        key: const ValueKey('overview_tab_screen'),
+        state: state,
+      );
+    }
+    if (state.selectedTab == 1) {
+      return const TasksScreen(key: ValueKey('tasks_tab_screen'));
+    }
+    if (state.selectedTab == 2) {
+      return const CalendarScreen(key: ValueKey('calendar_tab_screen'));
+    }
+    if (state.selectedTab == 3) {
+      return const ExpensesScreen(key: ValueKey('expenses_tab_screen'));
+    }
+    if (state.selectedTab == 4) {
+      return const InsightsScreen(key: ValueKey('insights_tab_screen'));
+    }
     final item = _destinations[state.selectedTab];
-    return DashboardPlaceholder(title: item.label, icon: item.icon);
+    return DashboardPlaceholder(
+      key: ValueKey('placeholder_${state.selectedTab}'),
+      title: item.label,
+      icon: item.icon,
+    );
   }
 }
 

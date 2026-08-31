@@ -39,6 +39,14 @@ class _DailySpendingChartState extends State<DailySpendingChart>
   }
 
   @override
+  void didUpdateWidget(covariant DailySpendingChart oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.points != widget.points) {
+      _controller.forward(from: 0.0);
+    }
+  }
+
+  @override
   void dispose() {
     _controller.dispose();
     super.dispose();

@@ -86,7 +86,29 @@ class _SettingsExpensePrefsCardState extends State<SettingsExpensePrefsCard> {
     }
   }
 
-  void _save() {
+  void _updateAndSave({
+    String? currency,
+    String? dateFormat,
+    String? numberFormat,
+    String? firstDayOfWeek,
+    String? defaultPaymentMethod,
+    String? defaultExpenseCategory,
+    bool? is24HourTime,
+  }) {
+    setState(() {
+      if (currency != null) _currency = currency;
+      if (dateFormat != null) _dateFormat = dateFormat;
+      if (numberFormat != null) _numberFormat = numberFormat;
+      if (firstDayOfWeek != null) _firstDayOfWeek = firstDayOfWeek;
+      if (defaultPaymentMethod != null) {
+        _defaultPaymentMethod = defaultPaymentMethod;
+      }
+      if (defaultExpenseCategory != null) {
+        _defaultExpenseCategory = defaultExpenseCategory;
+      }
+      if (is24HourTime != null) _is24HourTime = is24HourTime;
+    });
+
     HapticFeedback.mediumImpact();
     final updated = widget.profile.copyWith(
       currency: _currency,
@@ -98,6 +120,10 @@ class _SettingsExpensePrefsCardState extends State<SettingsExpensePrefsCard> {
       is24HourTime: _is24HourTime,
     );
     widget.onSave(updated);
+  }
+
+  void _save() {
+    _updateAndSave();
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Expense preferences saved successfully.')),
     );
@@ -135,9 +161,7 @@ class _SettingsExpensePrefsCardState extends State<SettingsExpensePrefsCard> {
                       'INR'
                     ],
                     selectedValue: _currency,
-                    onSelected: (val) {
-                      setState(() => _currency = val);
-                    },
+                    onSelected: (val) => _updateAndSave(currency: val),
                   ),
                 ),
               ),
@@ -151,7 +175,7 @@ class _SettingsExpensePrefsCardState extends State<SettingsExpensePrefsCard> {
                     title: 'Date format',
                     options: const ['MM/DD/YYYY', 'DD/MM/YYYY', 'YYYY-MM-DD'],
                     selectedValue: _dateFormat,
-                    onSelected: (val) => setState(() => _dateFormat = val),
+                    onSelected: (val) => _updateAndSave(dateFormat: val),
                   ),
                 ),
               ),
@@ -171,7 +195,7 @@ class _SettingsExpensePrefsCardState extends State<SettingsExpensePrefsCard> {
                     title: 'Number format',
                     options: const ['1,234.56', '1.234,56', '1 234,56'],
                     selectedValue: _numberFormat,
-                    onSelected: (val) => setState(() => _numberFormat = val),
+                    onSelected: (val) => _updateAndSave(numberFormat: val),
                   ),
                 ),
               ),
@@ -185,7 +209,7 @@ class _SettingsExpensePrefsCardState extends State<SettingsExpensePrefsCard> {
                     title: 'First day of week',
                     options: const ['Sunday', 'Monday', 'Saturday'],
                     selectedValue: _firstDayOfWeek,
-                    onSelected: (val) => setState(() => _firstDayOfWeek = val),
+                    onSelected: (val) => _updateAndSave(firstDayOfWeek: val),
                   ),
                 ),
               ),
@@ -203,21 +227,27 @@ class _SettingsExpensePrefsCardState extends State<SettingsExpensePrefsCard> {
                   onTap: () => PreferencePickerSheet.show(
                     context,
                     title: 'Default payment method',
-                    options: const ['Card', 'Cash', 'Mobile Wallet', 'Bank Transfer'],
+                    options: const [
+                      'Card',
+                      'Cash',
+                      'Mobile Wallet',
+                      'Bank Transfer',
+                      'Other'
+                    ],
                     selectedValue: _defaultPaymentMethod,
                     onSelected: (val) =>
-                        setState(() => _defaultPaymentMethod = val),
+                        _updateAndSave(defaultPaymentMethod: val),
                   ),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: _DropdownTile(
-                  label: 'Default expense category',
+                  label: 'Default category',
                   value: _defaultExpenseCategory,
                   onTap: () => PreferencePickerSheet.show(
                     context,
-                    title: 'Default expense category',
+                    title: 'Default category',
                     options: const [
                       'Food',
                       'Bills',
@@ -227,11 +257,12 @@ class _SettingsExpensePrefsCardState extends State<SettingsExpensePrefsCard> {
                       'Transportation',
                       'Healthcare',
                       'Entertainment',
-                      'Travel'
+                      'Travel',
+                      'Others'
                     ],
                     selectedValue: _defaultExpenseCategory,
                     onSelected: (val) =>
-                        setState(() => _defaultExpenseCategory = val),
+                        _updateAndSave(defaultExpenseCategory: val),
                   ),
                 ),
               ),

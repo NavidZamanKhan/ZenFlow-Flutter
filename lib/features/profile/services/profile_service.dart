@@ -132,11 +132,14 @@ class ProfileService {
             ? Map<String, dynamic>.from(rawCategoryBudgets)
             : <String, dynamic>{};
 
+        final serverCurrency =
+            data['currency']?.toString() ?? oldCurrency;
+
         final cur = CurrencyService();
         final convertedMonthlyTotal = cur.convertAmount(
           amount: rawMonthly.toDouble(),
           toCurrency: newCurrency,
-          fromCurrency: oldCurrency,
+          fromCurrency: serverCurrency,
         );
 
         final convertedCategories = <String, double>{};
@@ -147,7 +150,7 @@ class ProfileService {
           convertedCategories[k] = cur.convertAmount(
             amount: amt,
             toCurrency: newCurrency,
-            fromCurrency: oldCurrency,
+            fromCurrency: serverCurrency,
           );
         });
 

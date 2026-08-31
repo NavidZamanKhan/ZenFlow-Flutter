@@ -18,22 +18,19 @@ class ExpensesHeader extends StatelessWidget {
       children: [
         Expanded(
           child: Text(
-            'Expenses & Budget',
+            'Expenses',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: AppTextStyles.headingLarge(zen.textPrimary).copyWith(
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-            ),
+            style: AppTextStyles.displayLarge(zen.textPrimary),
           ),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 12),
         ZenButton(
           label: 'Add expense',
           icon: LucideIcons.plus,
           height: 38,
-          width: 124,
-          padding: const EdgeInsets.symmetric(horizontal: 10),
+          width: 132,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
           onPressed: onAddExpense,
         ),
       ],

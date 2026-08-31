@@ -60,53 +60,58 @@ class ExpensesScreen extends StatelessWidget {
       child: ColoredBox(
         color: zen.canvas,
         child: SafeArea(
-          bottom: false,
-          child: Column(
-            children: [
-              ExpensesHeader(
-                onAddExpense: () {
-                  HapticFeedback.lightImpact();
-                  final currency = context.read<ProfileBloc>().state.profile.currency;
-                  NewExpenseBottomSheet.show(
-                    context,
-                    currency: currency,
-                    onCreated: (expense) {
-                      context.read<ExpensesBloc>().add(AddExpense(expense));
-                    },
-                  );
+          child: BlocBuilder<ExpensesBloc, ExpensesState>(
+            builder: (context, state) {
+              final isAllExpenses =
+                  state.subTab == ExpensesSubTab.allExpenses;
+              return RefreshIndicator(
+                color: zen.accent,
+                backgroundColor: zen.card,
+                onRefresh: () async {
+                  context.read<ExpensesBloc>().add(FetchExpenses());
+                  await Future.delayed(const Duration(milliseconds: 650));
                 },
-              ),
-              const SizedBox(height: 14),
-              Expanded(
-                child: BlocBuilder<ExpensesBloc, ExpensesState>(
-                  builder: (context, state) {
-                    final isAllExpenses =
-                        state.subTab == ExpensesSubTab.allExpenses;
-                    return ListView(
-                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
-                      children: [
-                        ExpensesSubtabSwitcher(
-                          selected: state.subTab,
-                          onChanged: (tab) {
-                            HapticFeedback.selectionClick();
-                            context.read<ExpensesBloc>().add(SwitchSubTab(tab));
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(
+                    parent: BouncingScrollPhysics(),
+                  ),
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 118),
+                  children: [
+                    ExpensesHeader(
+                      onAddExpense: () {
+                        HapticFeedback.lightImpact();
+                        final currency =
+                            context.read<ProfileBloc>().state.profile.currency;
+                        NewExpenseBottomSheet.show(
+                          context,
+                          currency: currency,
+                          onCreated: (expense) {
+                            context.read<ExpensesBloc>().add(AddExpense(expense));
                           },
-                        ),
-                        const SizedBox(height: 18),
-                        AnimatedCrossFade(
-                          duration: const Duration(milliseconds: 250),
-                          crossFadeState: isAllExpenses
-                              ? CrossFadeState.showFirst
-                              : CrossFadeState.showSecond,
-                          firstChild: _allExpenses(context, state),
-                          secondChild: _budget(context, state),
-                        ),
-                      ],
-                    );
-                  },
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 18),
+                    ExpensesSubtabSwitcher(
+                      selected: state.subTab,
+                      onChanged: (tab) {
+                        HapticFeedback.selectionClick();
+                        context.read<ExpensesBloc>().add(SwitchSubTab(tab));
+                      },
+                    ),
+                    const SizedBox(height: 18),
+                    AnimatedCrossFade(
+                      duration: const Duration(milliseconds: 250),
+                      crossFadeState: isAllExpenses
+                          ? CrossFadeState.showFirst
+                          : CrossFadeState.showSecond,
+                      firstChild: _allExpenses(context, state),
+                      secondChild: _budget(context, state),
+                    ),
+                  ],
                 ),
-              ),
-            ],
+              );
+            },
           ),
         ),
       ),

@@ -9,8 +9,10 @@ class ExpenseItem extends Equatable {
   final DateTime date;
   final String paymentMethod;
   final String? notes;
+  final String? receiptImage;
   final bool isRecurring;
   final String? recurringInterval;
+  final List<String> tags;
 
   const ExpenseItem({
     required this.id,
@@ -21,8 +23,10 @@ class ExpenseItem extends Equatable {
     required this.date,
     required this.paymentMethod,
     this.notes,
+    this.receiptImage,
     this.isRecurring = false,
     this.recurringInterval,
+    this.tags = const [],
   });
 
   factory ExpenseItem.fromJson(Map<String, dynamic> json) {
@@ -39,9 +43,13 @@ class ExpenseItem extends Equatable {
           : DateTime.now(),
       paymentMethod: json['paymentMethod'] ?? json['payment_method'] ?? 'Card',
       notes: json['notes'],
+      receiptImage: json['receiptImage'] ?? json['receipt_image'],
       isRecurring: json['isRecurring'] ?? json['is_recurring'] ?? false,
       recurringInterval:
           json['recurringInterval'] ?? json['recurring_interval'],
+      tags: (json['tags'] is List)
+          ? (json['tags'] as List).map((e) => e.toString()).toList()
+          : const [],
     );
   }
 
@@ -56,9 +64,12 @@ class ExpenseItem extends Equatable {
           '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
       'paymentMethod': paymentMethod,
       if (notes != null && notes!.trim().isNotEmpty) 'notes': notes!.trim(),
+      if (receiptImage != null && receiptImage!.trim().isNotEmpty)
+        'receipt_image': receiptImage!.trim(),
       'isRecurring': isRecurring,
-      if (isRecurring && recurringInterval != null)
+      if (isRecurring && recurringInterval != null && recurringInterval!.isNotEmpty)
         'recurringInterval': recurringInterval,
+      if (tags.isNotEmpty) 'tags': tags,
     };
   }
 
@@ -71,8 +82,10 @@ class ExpenseItem extends Equatable {
     DateTime? date,
     String? paymentMethod,
     String? notes,
+    String? receiptImage,
     bool? isRecurring,
     String? recurringInterval,
+    List<String>? tags,
   }) {
     return ExpenseItem(
       id: id ?? this.id,
@@ -83,8 +96,10 @@ class ExpenseItem extends Equatable {
       date: date ?? this.date,
       paymentMethod: paymentMethod ?? this.paymentMethod,
       notes: notes ?? this.notes,
+      receiptImage: receiptImage ?? this.receiptImage,
       isRecurring: isRecurring ?? this.isRecurring,
       recurringInterval: recurringInterval ?? this.recurringInterval,
+      tags: tags ?? this.tags,
     );
   }
 
@@ -98,7 +113,9 @@ class ExpenseItem extends Equatable {
         date,
         paymentMethod,
         notes,
+        receiptImage,
         isRecurring,
         recurringInterval,
+        tags,
       ];
 }

@@ -257,6 +257,13 @@ class _NewTaskBottomSheetState extends State<NewTaskBottomSheet> {
                           ),
                         ),
                       ),
+                      if (_selectedDueDate == null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          'Select a due date first to add a time.',
+                          style: AppTextStyles.labelSmall(zen.textMuted).copyWith(fontSize: 11),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -289,7 +296,7 @@ class _NewTaskBottomSheetState extends State<NewTaskBottomSheet> {
                       const SizedBox(height: 6),
                       ZenTextField(
                         controller: _categoryController,
-                        hintText: 'e.g. Work, Design',
+                        hintText: 'e.g. Product, Design, Finance',
                       ),
                     ],
                   ),

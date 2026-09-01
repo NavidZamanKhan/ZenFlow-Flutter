@@ -14,6 +14,7 @@ import '../../notifications/widgets/notifications_bottom_sheet.dart';
 import '../../profile/bloc/profile_bloc.dart';
 import '../../profile/bloc/profile_state.dart';
 import '../../profile/widgets/user_menu_bottom_sheet.dart';
+import '../../search/views/global_search_screen.dart';
 
 class DashboardHeader extends StatelessWidget {
   final UserModel user;
@@ -70,6 +71,15 @@ class DashboardHeader extends StatelessWidget {
         const SizedBox(width: 12),
         Row(
           children: [
+            // Search Icon Button
+            ZenIconButton(
+              icon: LucideIcons.search,
+              hasBadge: false,
+              size: 40,
+              onTap: () => GlobalSearchScreen.show(context),
+            ),
+            const SizedBox(width: 8),
+
             // Notifications Bell with dynamic live unread counter
             BlocBuilder<NotificationsBloc, NotificationsState>(
               builder: (context, notifState) {

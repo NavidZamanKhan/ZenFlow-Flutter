@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/zenflow_theme.dart';
 import '../../../core/widgets/zen_badge.dart';
-import '../../../core/widgets/zen_button.dart';
+import '../../../core/widgets/zen_icon_button.dart';
+import '../../search/views/global_search_screen.dart';
 
 class TasksHeader extends StatelessWidget {
   final int pendingCount;
@@ -25,28 +27,39 @@ class TasksHeader extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Expanded(
-          child: Text(
-            'Tasks',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: AppTextStyles.displayLarge(zen.textPrimary),
+          child: Row(
+            children: [
+              Text(
+                'Tasks',
+                style: AppTextStyles.displayLarge(zen.textPrimary),
+              ),
+              const SizedBox(width: 10),
+              ZenBadge(
+                label: '$pendingCount left',
+                color: zen.accent,
+                showDot: false,
+              ),
+            ],
           ),
         ),
         Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            ZenBadge(
-              label: '$pendingCount ${pendingCount == 1 ? 'task' : 'tasks'} left',
-              color: zen.accent,
-              showDot: false,
+            ZenIconButton(
+              icon: LucideIcons.search,
+              size: 40,
+              onTap: () => GlobalSearchScreen.show(context),
             ),
-            const SizedBox(width: 10),
-            ZenButton(
-              label: 'New task',
+            const SizedBox(width: 8),
+            ZenIconButton(
               icon: LucideIcons.plus,
-              height: 38,
-              width: 116,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              onPressed: onNewTaskPressed,
+              size: 40,
+              backgroundColor: zen.accent,
+              iconColor: Colors.white,
+              onTap: () {
+                HapticFeedback.lightImpact();
+                onNewTaskPressed();
+              },
             ),
           ],
         ),

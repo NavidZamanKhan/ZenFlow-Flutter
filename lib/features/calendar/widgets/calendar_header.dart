@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/zenflow_theme.dart';
-import '../../../core/widgets/zen_button.dart';
+import '../../../core/widgets/zen_icon_button.dart';
+import '../../search/views/global_search_screen.dart';
 
 class CalendarHeader extends StatelessWidget {
   final VoidCallback onNewEventPressed;
@@ -21,7 +23,7 @@ class CalendarHeader extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Main Title Row with "+ New event" button
+        // Main Title Row with Search & Plus icon buttons
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -34,13 +36,26 @@ class CalendarHeader extends StatelessWidget {
                 style: AppTextStyles.displayLarge(zen.textPrimary),
               ),
             ),
-            ZenButton(
-              label: 'New event',
-              icon: LucideIcons.plus,
-              height: 38,
-              width: 120,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              onPressed: onNewEventPressed,
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ZenIconButton(
+                  icon: LucideIcons.search,
+                  size: 40,
+                  onTap: () => GlobalSearchScreen.show(context),
+                ),
+                const SizedBox(width: 8),
+                ZenIconButton(
+                  icon: LucideIcons.plus,
+                  size: 40,
+                  backgroundColor: zen.accent,
+                  iconColor: Colors.white,
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    onNewEventPressed();
+                  },
+                ),
+              ],
             ),
           ],
         ),

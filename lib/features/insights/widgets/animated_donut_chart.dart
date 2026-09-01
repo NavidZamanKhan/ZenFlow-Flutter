@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -50,7 +51,7 @@ class _AnimatedDonutChartState extends State<AnimatedDonutChart>
   @override
   void didUpdateWidget(covariant AnimatedDonutChart oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.segments != widget.segments) {
+    if (!listEquals(oldWidget.segments, widget.segments)) {
       _controller.forward(from: 0.0);
     }
   }

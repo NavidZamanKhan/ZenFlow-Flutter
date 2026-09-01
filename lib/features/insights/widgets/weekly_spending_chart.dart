@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -47,7 +48,7 @@ class _WeeklySpendingChartState extends State<WeeklySpendingChart>
   @override
   void didUpdateWidget(covariant WeeklySpendingChart oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.weeklyAmounts != widget.weeklyAmounts) {
+    if (!listEquals(oldWidget.weeklyAmounts, widget.weeklyAmounts)) {
       _controller.forward(from: 0.0);
     }
   }

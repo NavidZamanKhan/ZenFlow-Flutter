@@ -16,23 +16,8 @@ import '../widgets/smart_trends_card.dart';
 import '../widgets/spending_breakdown_card.dart';
 import '../widgets/weekly_spending_chart.dart';
 
-class InsightsScreen extends StatefulWidget {
+class InsightsScreen extends StatelessWidget {
   const InsightsScreen({super.key});
-
-  @override
-  State<InsightsScreen> createState() => _InsightsScreenState();
-}
-
-class _InsightsScreenState extends State<InsightsScreen> {
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Trigger a refresh with the current active currency on first build
-    final currency = context.read<ProfileBloc>().state.profile.currency;
-    context
-        .read<InsightsBloc>()
-        .add(RefreshInsightsEvent(activeCurrency: currency));
-  }
 
   @override
   Widget build(BuildContext context) {

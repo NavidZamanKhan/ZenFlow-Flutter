@@ -1,6 +1,7 @@
+import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 
-class ChartSegment {
+class ChartSegment extends Equatable {
   final String label;
   final double amount;
   final double percentage;
@@ -12,4 +13,7 @@ class ChartSegment {
     required this.percentage,
     required this.color,
   });
+
+  @override
+  List<Object?> get props => [label, amount, percentage, color];
 }

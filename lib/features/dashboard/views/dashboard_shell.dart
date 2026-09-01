@@ -43,8 +43,12 @@ class DashboardShell extends StatelessWidget {
       BlocProvider(
         create: (_) => DashboardBloc()..add(const DashboardLoadRequested()),
       ),
-      BlocProvider(create: (_) => TasksBloc()),
-      BlocProvider(create: (_) => CalendarBloc()),
+      BlocProvider(
+        create: (_) => TasksBloc()..add(const LoadTasksEvent()),
+      ),
+      BlocProvider(
+        create: (_) => CalendarBloc()..add(const LoadCalendarEvent()),
+      ),
       BlocProvider(
         create: (_) => ExpensesBloc()..add(const FetchExpenses()),
       ),

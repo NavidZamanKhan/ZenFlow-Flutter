@@ -19,6 +19,7 @@ import '../../profile/bloc/profile_bloc.dart';
 import '../../profile/views/profile_screen.dart';
 import '../../tasks/bloc/tasks_bloc.dart';
 import '../../tasks/bloc/tasks_event.dart' show ToggleTaskEvent, DeleteTaskEvent;
+import '../../tasks/models/task_filter.dart';
 import '../../tasks/models/task_item.dart';
 import '../../tasks/widgets/task_detail_bottom_sheet.dart';
 import '../bloc/search_bloc.dart';
@@ -31,10 +32,54 @@ class GlobalSearchScreen extends StatefulWidget {
   const GlobalSearchScreen({super.key});
 
   static Future<void> show(BuildContext context) {
+    final tasksBloc = context.read<TasksBloc>();
+    final expensesBloc = context.read<ExpensesBloc>();
+    final calendarBloc = context.read<CalendarBloc>();
+    final dashboardBloc = context.read<DashboardBloc>();
+    final profileBloc = context.read<ProfileBloc>();
+
+    final tasks = tasksBloc.state.tasks.isNotEmpty
+        ? tasksBloc.state.tasks
+        : dashboardBloc.state.tasks
+            .map(
+              (f) => TaskItem(
+                id: f.id,
+                title: f.title,
+                priority: TaskPriority.values.firstWhere(
+                  (p) => p.name.toLowerCase() == f.priority.toLowerCase(),
+                  orElse: () => TaskPriority.medium,
+                ),
+                isCompleted: f.isComplete,
+                category: f.category,
+                createdAt: DateTime.now(),
+              ),
+            )
+            .toList();
+    final expenses = expensesBloc.state.expenses;
+    final events = calendarBloc.state.items;
+    final currency = profileBloc.state.profile.currency;
+
     return Navigator.of(context).push(
       PageRouteBuilder(
-        pageBuilder: (ctx, anim, secAnim) => BlocProvider(
-          create: (_) => SearchBloc(),
+        pageBuilder: (ctx, anim, secAnim) => MultiBlocProvider(
+          providers: [
+            BlocProvider.value(value: tasksBloc),
+            BlocProvider.value(value: expensesBloc),
+            BlocProvider.value(value: calendarBloc),
+            BlocProvider.value(value: dashboardBloc),
+            BlocProvider.value(value: profileBloc),
+            BlocProvider(
+              create: (_) => SearchBloc()
+                ..add(
+                  UpdateSearchSourcesEvent(
+                    tasks: tasks,
+                    expenses: expenses,
+                    events: events,
+                    activeCurrency: currency,
+                  ),
+                ),
+            ),
+          ],
           child: const GlobalSearchScreen(),
         ),
         transitionsBuilder: (ctx, anim, secAnim, child) {
@@ -58,22 +103,7 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
   @override
   void initState() {
     super.initState();
-    // Pre-populate SearchBloc with active datasets from in-memory Blocs
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final tasks = context.read<TasksBloc>().state.tasks;
-      final expenses = context.read<ExpensesBloc>().state.expenses;
-      final events = context.read<CalendarBloc>().state.items;
-      final currency = context.read<ProfileBloc>().state.profile.currency;
-
-      context.read<SearchBloc>().add(
-            UpdateSearchSourcesEvent(
-              tasks: tasks,
-              expenses: expenses,
-              events: events,
-              activeCurrency: currency,
-            ),
-          );
-
       _focusNode.requestFocus();
     });
   }

@@ -11,6 +11,7 @@ import '../widgets/animated_donut_chart.dart';
 import '../widgets/daily_spending_chart.dart';
 import '../widgets/insights_header.dart';
 import '../widgets/insights_metrics_grid.dart';
+import '../widgets/insights_skeleton.dart';
 import '../widgets/insights_time_range_bar.dart';
 import '../widgets/smart_trends_card.dart';
 import '../widgets/spending_breakdown_card.dart';
@@ -42,93 +43,108 @@ class InsightsScreen extends StatelessWidget {
           child: SafeArea(
             child: BlocBuilder<InsightsBloc, InsightsState>(
               builder: (context, state) {
-                return RefreshIndicator(
-                  color: zen.accent,
-                  backgroundColor: zen.card,
-                  onRefresh: () async {
-                    context
-                        .read<InsightsBloc>()
-                        .add(RefreshInsightsEvent(activeCurrency: currency));
-                    await Future.delayed(const Duration(milliseconds: 650));
-                  },
-                  child: ListView(
-                    physics: const AlwaysScrollableScrollPhysics(
-                      parent: BouncingScrollPhysics(),
-                    ),
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 118),
-                    children: [
-                      // Header
-                      const InsightsHeader(),
-                      const SizedBox(height: 16),
+                final isLoadingInitial =
+                    (state.status == InsightsStatus.loading ||
+                            state.status == InsightsStatus.initial) &&
+                        state.categorySegments.isEmpty;
 
-                      // Time-Range Segmented Switcher
-                      InsightsTimeRangeBar(
-                        activeRange: state.timeRange,
-                        onRangeChanged: (newRange) {
-                          context.read<InsightsBloc>().add(
-                                TimeRangeChangedEvent(newRange,
-                                    activeCurrency: currency),
-                              );
-                        },
-                      ),
-                      const SizedBox(height: 20),
+                return AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 320),
+                  switchInCurve: Curves.easeOutCubic,
+                  switchOutCurve: Curves.easeInCubic,
+                  child: isLoadingInitial
+                      ? const InsightsSkeleton(key: ValueKey('insights_skeleton'))
+                      : RefreshIndicator(
+                          key: const ValueKey('insights_content'),
+                          color: zen.accent,
+                          backgroundColor: zen.card,
+                          onRefresh: () async {
+                            context.read<InsightsBloc>().add(
+                                  RefreshInsightsEvent(
+                                      activeCurrency: currency),
+                                );
+                            await Future.delayed(
+                                const Duration(milliseconds: 650));
+                          },
+                          child: ListView(
+                            physics: const AlwaysScrollableScrollPhysics(
+                              parent: BouncingScrollPhysics(),
+                            ),
+                            padding: const EdgeInsets.fromLTRB(20, 20, 20, 118),
+                            children: [
+                              // Header
+                              const InsightsHeader(),
+                              const SizedBox(height: 16),
 
-                      // 4 Metrics Summary
-                      InsightsMetricsGrid(
-                        totalSpending: state.totalSpending,
-                        spentThisMonth: state.spentThisMonth,
-                        dailyAverage: state.dailyAverage,
-                        totalTransactions: state.totalTransactions,
-                        currency: currency,
-                      ),
-                      const SizedBox(height: 18),
+                              // Time-Range Segmented Switcher
+                              InsightsTimeRangeBar(
+                                activeRange: state.timeRange,
+                                onRangeChanged: (newRange) {
+                                  context.read<InsightsBloc>().add(
+                                        TimeRangeChangedEvent(newRange,
+                                            activeCurrency: currency),
+                                      );
+                                },
+                              ),
+                              const SizedBox(height: 20),
 
-                      // Expenses by Category Donut
-                      AnimatedDonutChart(
-                        title: 'Expenses by category',
-                        subtitle: 'Your all-time category mix',
-                        segments: state.categorySegments,
-                        currency: currency,
-                      ),
-                      const SizedBox(height: 18),
+                              // 4 Metrics Summary
+                              InsightsMetricsGrid(
+                                totalSpending: state.totalSpending,
+                                spentThisMonth: state.spentThisMonth,
+                                dailyAverage: state.dailyAverage,
+                                totalTransactions: state.totalTransactions,
+                                currency: currency,
+                              ),
+                              const SizedBox(height: 18),
 
-                      // Daily Spending Spline Line Chart
-                      DailySpendingChart(
-                        points: state.dailyPoints,
-                        currency: currency,
-                      ),
-                      const SizedBox(height: 18),
+                              // Expenses by Category Donut
+                              AnimatedDonutChart(
+                                title: 'Expenses by category',
+                                subtitle: 'Your all-time category mix',
+                                segments: state.categorySegments,
+                                currency: currency,
+                              ),
+                              const SizedBox(height: 18),
 
-                      // Weekly Spending Bar Chart
-                      WeeklySpendingChart(
-                        weeklyAmounts: state.weeklyAmounts,
-                        currency: currency,
-                      ),
-                      const SizedBox(height: 18),
+                              // Daily Spending Spline Line Chart
+                              DailySpendingChart(
+                                points: state.dailyPoints,
+                                currency: currency,
+                              ),
+                              const SizedBox(height: 18),
 
-                      // Payment Methods Donut
-                      AnimatedDonutChart(
-                        title: 'Payment methods',
-                        subtitle: 'Distribution by amount spent',
-                        segments: state.paymentSegments,
-                        currency: currency,
-                      ),
-                      const SizedBox(height: 18),
+                              // Weekly Spending Bar Chart
+                              WeeklySpendingChart(
+                                weeklyAmounts: state.weeklyAmounts,
+                                currency: currency,
+                              ),
+                              const SizedBox(height: 18),
 
-                      // Category Spending Breakdown Bars
-                      SpendingBreakdownCard(
-                        segments: state.categorySegments,
-                        currency: currency,
-                      ),
-                      const SizedBox(height: 18),
+                              // Payment Methods Donut
+                              AnimatedDonutChart(
+                                title: 'Payment methods',
+                                subtitle: 'Distribution by amount spent',
+                                segments: state.paymentSegments,
+                                currency: currency,
+                              ),
+                              const SizedBox(height: 18),
 
-                      // Smart Analytics & Trends
-                      SmartTrendsCard(
-                        smartAnalytics: state.smartAnalytics,
-                        trendItems: state.trendItems,
-                      ),
-                    ],
-                  ),
+                              // Category Spending Breakdown Bars
+                              SpendingBreakdownCard(
+                                segments: state.categorySegments,
+                                currency: currency,
+                              ),
+                              const SizedBox(height: 18),
+
+                              // Smart Analytics & Trends
+                              SmartTrendsCard(
+                                smartAnalytics: state.smartAnalytics,
+                                trendItems: state.trendItems,
+                              ),
+                            ],
+                          ),
+                        ),
                 );
               },
             ),

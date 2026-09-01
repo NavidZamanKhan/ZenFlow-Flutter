@@ -97,7 +97,7 @@ class ExpensesState extends Equatable {
         );
   }
 
-  /// Active monthly budget limit converted to target currency
+  /// Active monthly budget limit converted to target currency with smart snapping
   double convertedTotalBudget({
     required String toCurrency,
     Map<String, double>? rates,
@@ -111,6 +111,7 @@ class ExpensesState extends Equatable {
       toCurrency: toCurrency,
       fromCurrency: budgetCurrency,
       rates: rates,
+      smartSnap: true,
     );
   }
 

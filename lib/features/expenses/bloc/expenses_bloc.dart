@@ -33,8 +33,9 @@ class ExpensesBloc extends Bloc<ExpensesEvent, ExpensesState> {
       (event, emit) => emit(state.copyWith(selectedCategory: event.category)),
     );
     on<UpdateBudget>(_onUpdateBudget);
+    on<UpdateMonthlyBudget>(_onUpdateMonthlyBudget);
 
-    add(FetchExpenses());
+    add(const FetchExpenses());
   }
 
   static ExpensesState _getInitialState(ClientCache cache) {
@@ -165,13 +166,36 @@ class ExpensesBloc extends Bloc<ExpensesEvent, ExpensesState> {
         )
         .toList();
 
-    emit(state.copyWith(budgets: updatedBudgets));
+    emit(state.copyWith(
+      budgets: updatedBudgets,
+      budgetCurrency: event.currency,
+    ));
 
     try {
       await _service.updateCategoryBudget(
         category: event.category,
         newAmount: event.amount,
         currentBudgets: updatedBudgets,
+        currency: event.currency,
+        currentMonthlyTotal: state.monthlyTotalBudget,
+      );
+    } catch (_) {}
+  }
+
+  Future<void> _onUpdateMonthlyBudget(
+    UpdateMonthlyBudget event,
+    Emitter<ExpensesState> emit,
+  ) async {
+    emit(state.copyWith(
+      monthlyTotalBudget: event.amount,
+      budgetCurrency: event.currency,
+    ));
+
+    try {
+      await _service.updateMonthlyBudgetTotal(
+        newTotal: event.amount,
+        currency: event.currency,
+        currentBudgets: state.budgets,
       );
     } catch (_) {}
   }

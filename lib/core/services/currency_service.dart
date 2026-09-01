@@ -218,17 +218,23 @@ class CurrencyService {
     required String toCurrency,
     String fromCurrency = 'USD',
     Map<String, double>? rates,
+    bool smartSnap = false,
   }) {
     if (fromCurrency == toCurrency || amount == 0) return amount;
     final r = rates ?? liveRates;
     final fromRate = r[fromCurrency] ?? 1.0;
     final toRate = r[toCurrency] ?? 1.0;
     final inUsd = amount / fromRate;
-    return inUsd * toRate;
+    final converted = inUsd * toRate;
+
+    if (smartSnap) {
+      return smartConvertCurrency(converted, toCurrency: toCurrency);
+    }
+    return converted;
   }
 
   /// Smart currency conversion that eliminates two-way floating point rounding drift
-  /// (e.g. 25,000 -> $205.76 -> 24,999.74 snaps cleanly back to 25,000), matching the web.
+  /// (e.g. 40,000 -> $324.49 -> 39,955.84 snaps cleanly back to 40,000), matching the web.
   static double smartConvertCurrency(
     double rawConverted, {
     String? toCurrency,
@@ -238,23 +244,43 @@ class CurrencyService {
     }
     final rounded2Dec = (rawConverted * 100).round() / 100.0;
 
-    // 1. Direct whole integer snapping (if within 0.35 of a round integer)
-    final nearestInt = rounded2Dec.roundToDouble();
-    if ((rounded2Dec - nearestInt).abs() < 0.35) {
-      return nearestInt;
-    }
+    // 1. Step snapping for denominations (BDT, JPY, INR, EUR, USD, etc.)
+    final isLargeDenomination = toCurrency == 'BDT' ||
+        toCurrency == 'JPY' ||
+        toCurrency == 'INR' ||
+        toCurrency == null;
 
-    // 2. Step snapping for currencies with larger denominations (BDT, JPY, INR)
-    if (toCurrency == 'BDT' || toCurrency == 'JPY' || toCurrency == 'INR') {
-      const steps = [10000, 5000, 1000, 500, 100, 50, 10, 5];
+    if (isLargeDenomination) {
+      const steps = [
+        50000,
+        25000,
+        20000,
+        10000,
+        5000,
+        2000,
+        1000,
+        500,
+        250,
+        100,
+        50,
+        20,
+        10,
+        5
+      ];
       for (final step in steps) {
         final nearestStep = (rounded2Dec / step).roundToDouble() * step;
         final diff = (rounded2Dec - nearestStep).abs();
-        final threshold = (step * 0.005) < 1.8 ? (step * 0.005) : 1.8;
-        if (diff < threshold) {
+        final threshold = (step * 0.018) < 2.5 ? 2.5 : (step * 0.018);
+        if (diff <= threshold) {
           return nearestStep;
         }
       }
+    }
+
+    // 2. Direct whole integer snapping (if within 0.40 of a round integer)
+    final nearestInt = rounded2Dec.roundToDouble();
+    if ((rounded2Dec - nearestInt).abs() < 0.40) {
+      return nearestInt;
     }
 
     return rounded2Dec;
@@ -265,6 +291,7 @@ class CurrencyService {
     String currency = 'BDT',
     String? fromCurrency,
     Map<String, double>? rates,
+    bool smartSnap = false,
   }) {
     final converted = fromCurrency != null && fromCurrency != currency
         ? convertAmount(
@@ -272,8 +299,9 @@ class CurrencyService {
             toCurrency: currency,
             fromCurrency: fromCurrency,
             rates: rates,
+            smartSnap: smartSnap,
           )
-        : amount;
+        : (smartSnap ? smartConvertCurrency(amount, toCurrency: currency) : amount);
 
     final meta = metadata[currency] ?? metadata['BDT']!;
     final formattedNum = NumberFormat.currency(

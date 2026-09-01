@@ -15,6 +15,7 @@ import '../bloc/expenses_state.dart';
 import '../models/category_budget_item.dart';
 import '../widgets/category_budget_tile.dart';
 import '../widgets/edit_budget_bottom_sheet.dart';
+import '../widgets/edit_monthly_budget_bottom_sheet.dart';
 import '../widgets/expense_summary_cards.dart';
 import '../widgets/expense_transaction_tile.dart';
 import '../widgets/expenses_header.dart';
@@ -70,7 +71,7 @@ class ExpensesScreen extends StatelessWidget {
                 backgroundColor: zen.card,
                 onRefresh: () async {
                   context.read<ProfileBloc>().add(const LoadProfileEvent());
-                  context.read<ExpensesBloc>().add(FetchExpenses());
+                  context.read<ExpensesBloc>().add(const FetchExpenses());
                   await Future.delayed(const Duration(milliseconds: 650));
                 },
                 child: ListView(
@@ -178,9 +179,9 @@ class ExpensesScreen extends StatelessWidget {
                     boxShadow: active
                         ? [
                             BoxShadow(
-                              color: zen.accent.withValues(alpha: 0.25),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
+                              color: zen.accent.withValues(alpha: 0.28),
+                              blurRadius: 10,
+                              offset: const Offset(0, 3),
                             ),
                           ]
                         : null,
@@ -188,27 +189,25 @@ class ExpensesScreen extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (dotColor != null && !active) ...[
+                      if (dotColor != null) ...[
                         Container(
-                          width: 7,
-                          height: 7,
+                          width: 8,
+                          height: 8,
                           decoration: BoxDecoration(
-                            color: dotColor,
+                            color: active ? Colors.white : dotColor,
                             shape: BoxShape.circle,
                           ),
                         ),
                         const SizedBox(width: 6),
                       ],
-                      AnimatedDefaultTextStyle(
-                        duration: const Duration(milliseconds: 240),
-                        curve: Curves.easeOutCubic,
+                      Text(
+                        filter,
                         style: AppTextStyles.labelSmall(
-                          active ? Colors.white : zen.textPrimary,
+                          active ? Colors.white : zen.textSecondary,
                         ).copyWith(
                           fontWeight:
                               active ? FontWeight.w700 : FontWeight.w500,
                         ),
-                        child: Text(filter),
                       ),
                     ],
                   ),
@@ -217,26 +216,36 @@ class ExpensesScreen extends StatelessWidget {
             },
           ),
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 16),
         ZenCard(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(4, 8, 4, 5),
+                padding: const EdgeInsets.symmetric(vertical: 4),
                 child: Row(
                   children: [
-                    Icon(LucideIcons.receipt, size: 17, color: zen.accent),
-                    const SizedBox(width: 8),
                     Text(
-                      'Recent transactions',
+                      'Recent Expenses',
                       style: AppTextStyles.headingSmall(zen.textPrimary),
                     ),
                     const Spacer(),
-                    Text(
-                      '${expenses.length} items',
-                      style: AppTextStyles.labelSmall(zen.textSecondary),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: zen.accentSoft,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        '${expenses.length}',
+                        style: AppTextStyles.labelSmall(zen.accent).copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -298,6 +307,7 @@ class ExpensesScreen extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ZenCard(
+          onTap: () => _editMonthlyBudget(context, budgetTotal),
           customBgColor: zen.isDark ? zen.card : zen.accentLightBg,
           customBorderColor: zen.accentLightBorder,
           child: Column(
@@ -312,7 +322,14 @@ class ExpensesScreen extends StatelessWidget {
                     style: AppTextStyles.headingSmall(zen.textPrimary),
                   ),
                   const Spacer(),
-                  Icon(LucideIcons.pencil, size: 16, color: zen.accent),
+                  IconButton(
+                    padding: EdgeInsets.zero,
+                    constraints:
+                        const BoxConstraints(minWidth: 28, minHeight: 28),
+                    icon: Icon(LucideIcons.pencil, size: 16, color: zen.accent),
+                    onPressed: () =>
+                        _editMonthlyBudget(context, budgetTotal),
+                  ),
                 ],
               ),
               const SizedBox(height: 16),
@@ -367,14 +384,28 @@ class ExpensesScreen extends StatelessWidget {
     );
   }
 
+  void _editMonthlyBudget(BuildContext context, double currentBudget) {
+    HapticFeedback.lightImpact();
+    final currency = context.read<ProfileBloc>().state.profile.currency;
+    EditMonthlyBudgetBottomSheet.show(
+      context,
+      currentBudget: currentBudget,
+      currency: currency,
+      onSaved: (amount) => context.read<ExpensesBloc>().add(
+        UpdateMonthlyBudget(amount, currency: currency),
+      ),
+    );
+  }
+
   void _editBudget(BuildContext context, CategoryBudgetItem item) {
+    HapticFeedback.lightImpact();
     final currency = context.read<ProfileBloc>().state.profile.currency;
     EditBudgetBottomSheet.show(
       context,
       budget: item,
       currency: currency,
       onSaved: (amount) => context.read<ExpensesBloc>().add(
-        UpdateBudget(item.category, amount),
+        UpdateBudget(item.category, amount, currency: currency),
       ),
     );
   }

@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 import '../../../core/constants/api_endpoints.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/services/currency_service.dart';
 import '../models/category_budget_item.dart';
 import '../models/expense_item.dart';
 
@@ -64,15 +65,22 @@ class ExpensesService {
             : <String, dynamic>{};
         final currency = data['currency']?.toString() ?? 'BDT';
 
-        // Calculate spent amount per category for current month
+        // Calculate spent amount per category for current month, converting each expense to budget currency
         final now = DateTime.now();
         final currentMonthExpenses = expenses.where((e) =>
             e.date.year == now.year && e.date.month == now.month);
 
         final spentMap = <String, double>{};
+        final curService = CurrencyService();
+
         for (final exp in currentMonthExpenses) {
+          final convertedExpAmount = curService.convertAmount(
+            amount: exp.amount,
+            toCurrency: currency,
+            fromCurrency: exp.currency,
+          );
           spentMap[exp.category] =
-              (spentMap[exp.category] ?? 0.0) + exp.amount;
+              (spentMap[exp.category] ?? 0.0) + convertedExpAmount;
         }
 
         final items = <CategoryBudgetItem>[];
@@ -100,6 +108,7 @@ class ExpensesService {
           'Healthcare',
           'Entertainment',
           'Travel',
+          'Others',
         ];
         for (final cat in defaultCats) {
           if (!items
@@ -142,23 +151,52 @@ class ExpensesService {
     required String category,
     required double newAmount,
     required List<CategoryBudgetItem> currentBudgets,
+    required String currency,
+    required double currentMonthlyTotal,
   }) async {
     try {
       final categoryBudgetsMap = <String, double>{};
-      double total = 0.0;
 
       for (final b in currentBudgets) {
         final amount = b.category == category ? newAmount : b.budgetAmount;
         if (amount > 0) {
           categoryBudgetsMap[b.category] = amount;
-          total += amount;
         }
       }
 
       await _apiClient.dio.put(
         ApiEndpoints.budget,
         data: {
-          'monthlyTotal': total,
+          'monthlyTotal': currentMonthlyTotal > 0 ? currentMonthlyTotal : 40000.0,
+          'currency': currency,
+          'categoryBudgets': categoryBudgetsMap,
+          'warningThresholds': [75, 90, 100],
+        },
+      );
+    } catch (_) {
+      // Ignored
+    }
+  }
+
+  Future<void> updateMonthlyBudgetTotal({
+    required double newTotal,
+    required String currency,
+    required List<CategoryBudgetItem> currentBudgets,
+  }) async {
+    try {
+      final categoryBudgetsMap = <String, double>{};
+
+      for (final b in currentBudgets) {
+        if (b.budgetAmount > 0) {
+          categoryBudgetsMap[b.category] = b.budgetAmount;
+        }
+      }
+
+      await _apiClient.dio.put(
+        ApiEndpoints.budget,
+        data: {
+          'monthlyTotal': newTotal,
+          'currency': currency,
           'categoryBudgets': categoryBudgetsMap,
           'warningThresholds': [75, 90, 100],
         },

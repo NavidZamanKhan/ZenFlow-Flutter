@@ -6,23 +6,22 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/zenflow_theme.dart';
 import '../../../core/widgets/zen_button.dart';
 import '../../../core/widgets/zen_text_field.dart';
-import '../models/category_budget_item.dart';
 
-class EditBudgetBottomSheet extends StatefulWidget {
-  final CategoryBudgetItem budget;
+class EditMonthlyBudgetBottomSheet extends StatefulWidget {
+  final double currentBudget;
   final ValueChanged<double> onSaved;
   final String currency;
 
-  const EditBudgetBottomSheet({
+  const EditMonthlyBudgetBottomSheet({
     super.key,
-    required this.budget,
+    required this.currentBudget,
     required this.onSaved,
     this.currency = 'BDT',
   });
 
   static Future<void> show(
     BuildContext context, {
-    required CategoryBudgetItem budget,
+    required double currentBudget,
     required ValueChanged<double> onSaved,
     String currency = 'BDT',
   }) =>
@@ -30,37 +29,25 @@ class EditBudgetBottomSheet extends StatefulWidget {
         context: context,
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
-        builder: (_) => EditBudgetBottomSheet(
-          budget: budget,
+        builder: (_) => EditMonthlyBudgetBottomSheet(
+          currentBudget: currentBudget,
           onSaved: onSaved,
           currency: currency,
         ),
       );
 
   @override
-  State<EditBudgetBottomSheet> createState() => _EditBudgetBottomSheetState();
+  State<EditMonthlyBudgetBottomSheet> createState() =>
+      _EditMonthlyBudgetBottomSheetState();
 }
 
-class _EditBudgetBottomSheetState extends State<EditBudgetBottomSheet> {
-  late final TextEditingController _amount;
-
-  @override
-  void initState() {
-    super.initState();
-    final convertedAmount = CurrencyService().convertAmount(
-      amount: widget.budget.budgetAmount,
-      toCurrency: widget.currency,
-      fromCurrency: widget.budget.currency,
-      smartSnap: true,
-    );
-    _amount = TextEditingController(
-      text: convertedAmount > 0
-          ? (convertedAmount % 1 == 0
-              ? convertedAmount.toInt().toString()
-              : convertedAmount.toStringAsFixed(2))
-          : '',
-    );
-  }
+class _EditMonthlyBudgetBottomSheetState
+    extends State<EditMonthlyBudgetBottomSheet> {
+  late final TextEditingController _amount = TextEditingController(
+    text: widget.currentBudget > 0
+        ? widget.currentBudget.round().toString()
+        : '40000',
+  );
 
   @override
   void dispose() {
@@ -70,7 +57,7 @@ class _EditBudgetBottomSheetState extends State<EditBudgetBottomSheet> {
 
   void _save() {
     final amount = double.tryParse(_amount.text.replaceAll(',', ''));
-    if (amount == null || amount < 0) return;
+    if (amount == null || amount <= 0) return;
     HapticFeedback.mediumImpact();
     widget.onSaved(amount);
     Navigator.pop(context);
@@ -85,8 +72,8 @@ class _EditBudgetBottomSheetState extends State<EditBudgetBottomSheet> {
     final presets = widget.currency == 'BDT' ||
             widget.currency == 'JPY' ||
             widget.currency == 'INR'
-        ? [1000, 2000, 5000, 10000, 15000, 20000]
-        : [15, 25, 50, 100, 150, 200];
+        ? [20000, 30000, 40000, 50000, 75000, 100000]
+        : [250, 400, 500, 750, 1000, 1500];
 
     return Container(
       padding: EdgeInsets.fromLTRB(
@@ -116,18 +103,18 @@ class _EditBudgetBottomSheetState extends State<EditBudgetBottomSheet> {
           ),
           const SizedBox(height: 18),
           Text(
-            'Edit ${widget.budget.category} budget',
+            'Edit Monthly Budget',
             style: AppTextStyles.headingLarge(zen.textPrimary),
           ),
           const SizedBox(height: 6),
           Text(
-            'Set a monthly spending limit for this category.',
+            'Set your overall spending ceiling across all categories for this month.',
             style: AppTextStyles.bodySmall(zen.textSecondary),
           ),
           const SizedBox(height: 20),
           ZenTextField(
             controller: _amount,
-            labelText: 'Monthly limit',
+            labelText: 'Total monthly budget',
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             prefixIcon: Padding(
               padding: const EdgeInsets.all(13),
@@ -166,7 +153,7 @@ class _EditBudgetBottomSheetState extends State<EditBudgetBottomSheet> {
             }).toList(),
           ),
           const SizedBox(height: 20),
-          ZenButton(label: 'Save category budget', onPressed: _save),
+          ZenButton(label: 'Save Monthly Budget', onPressed: _save),
         ],
       ),
     );

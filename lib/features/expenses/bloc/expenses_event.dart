@@ -30,9 +30,18 @@ class DeleteExpense extends ExpensesEvent {
 class UpdateBudget extends ExpensesEvent {
   final String category;
   final double amount;
-  const UpdateBudget(this.category, this.amount);
+  final String currency;
+  const UpdateBudget(this.category, this.amount, {this.currency = 'BDT'});
   @override
-  List<Object?> get props => [category, amount];
+  List<Object?> get props => [category, amount, currency];
+}
+
+class UpdateMonthlyBudget extends ExpensesEvent {
+  final double amount;
+  final String currency;
+  const UpdateMonthlyBudget(this.amount, {this.currency = 'BDT'});
+  @override
+  List<Object?> get props => [amount, currency];
 }
 
 class SwitchSubTab extends ExpensesEvent {

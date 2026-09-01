@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 
 import '../../../core/services/currency_service.dart';
@@ -22,16 +23,41 @@ class CategoryBudgetTile extends StatelessWidget {
   String _money(double value) => CurrencyService().formatMoney(
         amount: value,
         currency: activeCurrency,
-        fromCurrency: budget.currency,
       );
 
   @override
   Widget build(BuildContext context) {
     final zen = context.zenColors;
-    final color = budget.isWarning ? Colors.amber.shade700 : zen.accent;
-    final remaining = budget.budgetAmount - budget.spentAmount;
+    final curService = CurrencyService();
+
+    final convertedBudget = curService.convertAmount(
+      amount: budget.budgetAmount,
+      toCurrency: activeCurrency,
+      fromCurrency: budget.currency,
+      smartSnap: true,
+    );
+    final convertedSpent = curService.convertAmount(
+      amount: budget.spentAmount,
+      toCurrency: activeCurrency,
+      fromCurrency: budget.currency,
+    );
+
+    final remaining = convertedBudget - convertedSpent;
+    final progress = convertedBudget == 0
+        ? 0.0
+        : (convertedSpent / convertedBudget).clamp(0.0, 1.0);
+    final percentUsed = convertedBudget == 0
+        ? 0
+        : ((convertedSpent / convertedBudget) * 100).round();
+    final isWarning = percentUsed >= 75;
+
+    final color = isWarning ? Colors.amber.shade700 : zen.accent;
+
     return ZenCard(
-      onTap: onEdit,
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onEdit();
+      },
       padding: const EdgeInsets.all(15),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -53,7 +79,7 @@ class CategoryBudgetTile extends StatelessWidget {
                   style: AppTextStyles.labelLarge(zen.textPrimary),
                 ),
               ),
-              if (budget.isWarning)
+              if (isWarning)
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 7,
@@ -69,7 +95,7 @@ class CategoryBudgetTile extends StatelessWidget {
                       Icon(LucideIcons.triangle_alert, size: 12, color: color),
                       const SizedBox(width: 3),
                       Text(
-                        '${budget.percentUsed}% used',
+                        '$percentUsed% used',
                         style: AppTextStyles.labelSmall(color),
                       ),
                     ],
@@ -77,7 +103,7 @@ class CategoryBudgetTile extends StatelessWidget {
                 )
               else
                 Text(
-                  '${budget.percentUsed}% used',
+                  '$percentUsed% used',
                   style: AppTextStyles.labelSmall(zen.textSecondary),
                 ),
             ],
@@ -86,7 +112,7 @@ class CategoryBudgetTile extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: LinearProgressIndicator(
-              value: budget.progress,
+              value: progress,
               minHeight: 8,
               backgroundColor: zen.subtleFill,
               valueColor: AlwaysStoppedAnimation(color),
@@ -96,7 +122,7 @@ class CategoryBudgetTile extends StatelessWidget {
           Row(
             children: [
               Text(
-                '${_money(budget.spentAmount)} spent',
+                '${_money(convertedSpent)} spent',
                 style: AppTextStyles.labelSmall(zen.textSecondary),
               ),
               const Spacer(),
@@ -105,7 +131,15 @@ class CategoryBudgetTile extends StatelessWidget {
                 style: AppTextStyles.labelSmall(zen.textSecondary),
               ),
               const SizedBox(width: 8),
-              Icon(LucideIcons.pencil, size: 14, color: zen.accent),
+              IconButton(
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+                icon: Icon(LucideIcons.pencil, size: 14, color: zen.accent),
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  onEdit();
+                },
+              ),
             ],
           ),
         ],

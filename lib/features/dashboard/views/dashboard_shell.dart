@@ -1,13 +1,14 @@
-import 'dart:ui';
+import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 
+import '../../../core/services/notification_service.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/zenflow_theme.dart';
+import '../../../core/widgets/notification_permission_sheet.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../../auth/bloc/auth_state.dart';
 import '../../calendar/bloc/calendar_bloc.dart';
@@ -28,6 +29,7 @@ import '../../profile/bloc/profile_state.dart';
 import '../../tasks/bloc/tasks_bloc.dart';
 import '../../tasks/bloc/tasks_event.dart';
 import '../../tasks/views/tasks_screen.dart';
+import '../../tasks/widgets/task_detail_bottom_sheet.dart';
 import '../bloc/dashboard_bloc.dart';
 import '../bloc/dashboard_event.dart';
 import '../bloc/dashboard_state.dart';
@@ -95,6 +97,14 @@ class _DashboardAuthSyncListener extends StatelessWidget {
                     budget: state.budget,
                   ),
                 );
+
+            // Schedule Daily Morning Digest with latest tasks & events
+            final tasks = context.read<TasksBloc>().state.tasks;
+            final events = context.read<CalendarBloc>().state.items;
+            NotificationService().scheduleDailyMorningDigest(
+              todayTasks: tasks,
+              todayEvents: events,
+            );
           },
         ),
         BlocListener<ProfileBloc, ProfileState>(
@@ -145,16 +155,63 @@ class _DashboardShellBody extends StatefulWidget {
 
 class _DashboardShellBodyState extends State<_DashboardShellBody>
     with WidgetsBindingObserver {
+  StreamSubscription<String?>? _notificationTapSub;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+
+    // 1. Subscribe to Notification Tap Stream for smart deep-linking
+    _notificationTapSub =
+        NotificationService().onNotificationTap.listen(_handleNotificationTap);
+
+    // 2. Show contextual soft permission primer if never prompted before
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        if (mounted) {
+          NotificationPermissionSheet.showIfNeeded(context);
+        }
+      });
+    });
   }
 
   @override
   void dispose() {
+    _notificationTapSub?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  void _handleNotificationTap(String? payload) {
+    if (payload == null || !mounted) return;
+
+    if (payload.startsWith('task:')) {
+      final taskId = payload.replaceFirst('task:', '');
+      context.read<DashboardBloc>().add(const DashboardTabSelected(1));
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted) {
+          final tasks = context.read<TasksBloc>().state.tasks;
+          final task = tasks.where((t) => t.id == taskId).firstOrNull;
+          if (task != null) {
+            TaskDetailBottomSheet.show(
+              context,
+              task: task,
+              onToggle: () =>
+                  context.read<TasksBloc>().add(ToggleTaskEvent(task.id)),
+              onDelete: () =>
+                  context.read<TasksBloc>().add(DeleteTaskEvent(task.id)),
+            );
+          }
+        }
+      });
+    } else if (payload.startsWith('event:')) {
+      context.read<DashboardBloc>().add(const DashboardTabSelected(2));
+    } else if (payload.startsWith('budget:')) {
+      context.read<DashboardBloc>().add(const DashboardTabSelected(3));
+    } else if (payload.startsWith('digest:')) {
+      context.read<DashboardBloc>().add(const DashboardTabSelected(0));
+    }
   }
 
   @override
@@ -199,160 +256,111 @@ class _DashboardShellBodyState extends State<_DashboardShellBody>
     if (state.selectedTab == 4) {
       return const InsightsScreen(key: ValueKey('insights_tab_screen'));
     }
-    final item = _DashboardShellBody.destinations[state.selectedTab];
-    return DashboardPlaceholder(
-      key: ValueKey('placeholder_${state.selectedTab}'),
-      title: item.label,
-      icon: item.icon,
+    return const DashboardPlaceholder(
+      title: 'Overview',
+      icon: LucideIcons.layout_dashboard,
     );
   }
 }
 
 class _ZenBottomNavigation extends StatelessWidget {
   final int selectedIndex;
+
   const _ZenBottomNavigation({required this.selectedIndex});
 
   @override
   Widget build(BuildContext context) {
     final zen = context.zenColors;
-    final isIos = defaultTargetPlatform == TargetPlatform.iOS;
-    final totalTabs = _DashboardShellBody.destinations.length;
 
-    return SafeArea(
-      top: false,
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: zen.isDark ? .24 : .08),
-              blurRadius: isIos ? 28 : 20,
-              offset: const Offset(0, 10),
-            ),
-          ],
+    return Container(
+      decoration: BoxDecoration(
+        color: zen.canvas.withValues(alpha: 0.95),
+        border: Border(
+          top: BorderSide(
+            color: zen.border.withValues(alpha: 0.6),
+            width: 1,
+          ),
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-            child: Container(
-              padding: const EdgeInsets.all(5),
-              decoration: BoxDecoration(
-                color: zen.isDark
-                    ? zen.card.withValues(alpha: .85)
-                    : Colors.white.withValues(alpha: .88),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: zen.border.withValues(alpha: zen.isDark ? .4 : .8),
-                  width: 1,
-                ),
-              ),
-              child: SizedBox(
-                height: 58,
-                child: Stack(
-                  children: [
-                    // Continuous Silky Smooth Sliding Background Pill
-                    IgnorePointer(
-                      child: AnimatedAlign(
-                        duration: const Duration(milliseconds: 360),
-                        curve: Curves.easeOutCubic,
-                        alignment: Alignment(
-                          -1.0 + (2.0 * selectedIndex / (totalTabs - 1)),
-                          0,
-                        ),
-                        child: FractionallySizedBox(
-                          widthFactor: 1 / totalTabs,
-                          heightFactor: 1,
-                          child: Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 2),
-                            decoration: BoxDecoration(
-                              color: zen.isDark
-                                  ? zen.accent.withValues(alpha: .22)
-                                  : zen.accentSoft,
-                              borderRadius: BorderRadius.circular(18),
-                              border: Border.all(
-                                color: zen.accent.withValues(
-                                  alpha: isIos ? .28 : .18,
-                                ),
-                                width: 1,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: zen.accent.withValues(
-                                    alpha: isIos ? .16 : .10,
-                                  ),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 3),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: List.generate(
+              _DashboardShellBody.destinations.length,
+              (index) {
+                final item = _DashboardShellBody.destinations[index];
+                final isSelected = index == selectedIndex;
 
-                    // Interactive Tab Buttons Layer
-                    Row(
-                      children: List.generate(totalTabs, (index) {
-                        final destination =
-                            _DashboardShellBody.destinations[index];
-                        final isSelected = selectedIndex == index;
-
-                        return Expanded(
-                          child: InkWell(
-                            onTap: () {
-                              HapticFeedback.selectionClick();
-                              context.read<DashboardBloc>().add(
-                                    DashboardTabSelected(index),
-                                  );
-                            },
-                            borderRadius: BorderRadius.circular(18),
-                            splashColor: Colors.transparent,
-                            highlightColor: Colors.transparent,
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                AnimatedScale(
-                                  duration: const Duration(milliseconds: 240),
-                                  curve: Curves.easeOutBack,
-                                  scale: isSelected ? 1.08 : 0.92,
-                                  child: Icon(
-                                    destination.icon,
-                                    size: isSelected ? 20 : 19,
-                                    color: isSelected
-                                        ? zen.accent
-                                        : zen.textMuted,
-                                  ),
-                                ),
-                                const SizedBox(height: 3),
-                                AnimatedDefaultTextStyle(
-                                  duration: const Duration(milliseconds: 200),
-                                  style: AppTextStyles.labelSmall(
-                                    isSelected ? zen.accent : zen.textMuted,
-                                  ).copyWith(
-                                    fontWeight: isSelected
-                                        ? FontWeight.w700
-                                        : FontWeight.w500,
-                                    fontSize: 10.5,
-                                  ),
-                                  child: Text(
-                                    destination.label,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      }),
-                    ),
-                  ],
-                ),
-              ),
+                return _NavItem(
+                  icon: item.icon,
+                  label: item.label,
+                  isSelected: isSelected,
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    context
+                        .read<DashboardBloc>()
+                        .add(DashboardTabSelected(index));
+                  },
+                );
+              },
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NavItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _NavItem({
+    required this.icon,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final zen = context.zenColors;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? zen.accent.withValues(alpha: 0.12) : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 20,
+              color: isSelected ? zen.accent : zen.textMuted,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: AppTextStyles.labelSmall(
+                isSelected ? zen.accent : zen.textMuted,
+              ).copyWith(
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                fontSize: 10.5,
+              ),
+            ),
+          ],
         ),
       ),
     );

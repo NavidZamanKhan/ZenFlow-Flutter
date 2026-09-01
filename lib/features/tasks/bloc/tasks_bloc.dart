@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/cache/client_cache.dart';
+import '../../../core/services/notification_service.dart';
 import '../models/task_item.dart';
 import '../services/tasks_service.dart';
 import 'tasks_event.dart';
@@ -11,10 +12,15 @@ class TasksBloc extends Bloc<TasksEvent, TasksState> {
   static const String _cacheKey = 'tasks_list';
   final TasksService _service;
   final ClientCache _cache;
+  final NotificationService _notificationService;
 
-  TasksBloc({TasksService? service, ClientCache? cache})
-      : _service = service ?? TasksService(),
+  TasksBloc({
+    TasksService? service,
+    ClientCache? cache,
+    NotificationService? notificationService,
+  })  : _service = service ?? TasksService(),
         _cache = cache ?? ClientCache.instance,
+        _notificationService = notificationService ?? NotificationService(),
         super(_getInitialState(cache ?? ClientCache.instance)) {
     on<LoadTasksEvent>(_onLoadTasks);
     on<AddTaskEvent>(_onAddTask);
@@ -54,8 +60,14 @@ class TasksBloc extends Bloc<TasksEvent, TasksState> {
         tasks: tasks,
         status: TasksStatus.success,
       ));
+
+      // Auto-schedule 15m alerts for pending tasks
+      for (final t in tasks) {
+        if (!t.isCompleted) {
+          unawaited(_notificationService.scheduleTaskReminder(t));
+        }
+      }
     } catch (_) {
-      // Fallback to cache
       emit(state.copyWith(status: TasksStatus.success));
     }
   }
@@ -75,6 +87,9 @@ class TasksBloc extends Bloc<TasksEvent, TasksState> {
     _cache.set(_cacheKey, optimisticList);
     emit(state.copyWith(tasks: optimisticList, status: TasksStatus.success));
 
+    // Auto-schedule notification
+    unawaited(_notificationService.scheduleTaskReminder(optimisticTask));
+
     // 2. Silent background network execution
     try {
       final created = await _service.createTask(optimisticTask);
@@ -83,8 +98,13 @@ class TasksBloc extends Bloc<TasksEvent, TasksState> {
           .toList();
       _cache.set(_cacheKey, syncedList);
       emit(state.copyWith(tasks: syncedList));
+
+      // Reschedule with real ID
+      unawaited(_notificationService.cancelTaskReminder(tempId));
+      unawaited(_notificationService.scheduleTaskReminder(created));
     } catch (_) {
       // Rollback on network failure
+      unawaited(_notificationService.cancelTaskReminder(tempId));
       _cache.set(_cacheKey, previousTasks);
       emit(state.copyWith(tasks: previousTasks));
     }
@@ -96,18 +116,27 @@ class TasksBloc extends Bloc<TasksEvent, TasksState> {
   ) async {
     final previousTasks = state.tasks;
     bool targetCompleted = false;
+    TaskItem? updatedTask;
 
     // 1. Instant 0ms Optimistic UI update
     final optimisticList = state.tasks.map((task) {
       if (task.id == event.taskId) {
         targetCompleted = !task.isCompleted;
-        return task.copyWith(isCompleted: targetCompleted);
+        updatedTask = task.copyWith(isCompleted: targetCompleted);
+        return updatedTask!;
       }
       return task;
     }).toList();
 
     _cache.set(_cacheKey, optimisticList);
     emit(state.copyWith(tasks: optimisticList, status: TasksStatus.success));
+
+    // Cancel notification if completed, reschedule if uncompleted
+    if (targetCompleted) {
+      unawaited(_notificationService.cancelTaskReminder(event.taskId));
+    } else if (updatedTask != null) {
+      unawaited(_notificationService.scheduleTaskReminder(updatedTask!));
+    }
 
     // 2. Silent background network execution
     try {
@@ -129,6 +158,9 @@ class TasksBloc extends Bloc<TasksEvent, TasksState> {
         state.tasks.where((t) => t.id != event.taskId).toList();
     _cache.set(_cacheKey, optimisticList);
     emit(state.copyWith(tasks: optimisticList, status: TasksStatus.success));
+
+    // Cancel scheduled notification
+    unawaited(_notificationService.cancelTaskReminder(event.taskId));
 
     // 2. Silent background network execution
     try {
@@ -156,6 +188,9 @@ class TasksBloc extends Bloc<TasksEvent, TasksState> {
     _cache.set(_cacheKey, optimisticList);
     emit(state.copyWith(tasks: optimisticList, status: TasksStatus.success));
 
+    // Update scheduled notification
+    unawaited(_notificationService.scheduleTaskReminder(event.task));
+
     // 2. Silent background network execution
     try {
       final updated = await _service.updateTask(event.task);
@@ -164,6 +199,7 @@ class TasksBloc extends Bloc<TasksEvent, TasksState> {
           .toList();
       _cache.set(_cacheKey, syncedList);
       emit(state.copyWith(tasks: syncedList));
+      unawaited(_notificationService.scheduleTaskReminder(updated));
     } catch (_) {
       _cache.set(_cacheKey, previousTasks);
       emit(state.copyWith(tasks: previousTasks));

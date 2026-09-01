@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/cache/client_cache.dart';
+import '../../../core/services/notification_service.dart';
+import '../models/category_budget_item.dart';
 import '../models/expense_item.dart';
 import '../services/expenses_service.dart';
 import 'expenses_event.dart';
@@ -11,10 +13,15 @@ class ExpensesBloc extends Bloc<ExpensesEvent, ExpensesState> {
   static const String _cacheKey = 'expenses_list';
   final ExpensesService _service;
   final ClientCache _cache;
+  final NotificationService _notificationService;
 
-  ExpensesBloc({ExpensesService? service, ClientCache? cache})
-      : _service = service ?? ExpensesService(),
+  ExpensesBloc({
+    ExpensesService? service,
+    ClientCache? cache,
+    NotificationService? notificationService,
+  })  : _service = service ?? ExpensesService(),
         _cache = cache ?? ClientCache.instance,
+        _notificationService = notificationService ?? NotificationService(),
         super(_getInitialState(cache ?? ClientCache.instance)) {
     on<FetchExpenses>(_onFetchExpenses);
     on<AddExpense>(_onAddExpense);
@@ -37,6 +44,33 @@ class ExpensesBloc extends Bloc<ExpensesEvent, ExpensesState> {
       expenses: (cached != null && cached.isNotEmpty) ? cached : const [],
       monthlyTotalBudget: 40000.0,
     );
+  }
+
+  void _checkBudgetThresholds(List<CategoryBudgetItem> budgets) {
+    for (final b in budgets) {
+      if (b.budgetAmount > 0) {
+        final pct = b.percentUsed;
+        if (pct >= 100) {
+          unawaited(
+            _notificationService.showBudgetWarning(
+              title: 'Budget Exceeded: ${b.category} ⚠️',
+              message:
+                  'You have reached 100% of your ${b.category} budget for this month.',
+              category: b.category,
+            ),
+          );
+        } else if (pct >= 80) {
+          unawaited(
+            _notificationService.showBudgetWarning(
+              title: 'Budget Alert: ${b.category} 💸',
+              message:
+                  'You have used $pct% of your ${b.category} monthly budget.',
+              category: b.category,
+            ),
+          );
+        }
+      }
+    }
   }
 
   Future<void> _onFetchExpenses(
@@ -86,6 +120,8 @@ class ExpensesBloc extends Bloc<ExpensesEvent, ExpensesState> {
         expenses: updatedList,
         budgets: budgets.isNotEmpty ? budgets : state.budgets,
       ));
+
+      _checkBudgetThresholds(budgets);
     } catch (_) {
       _cache.set(_cacheKey, previousExpenses);
       emit(state.copyWith(expenses: previousExpenses));

@@ -15,6 +15,7 @@ import '../models/user_profile.dart';
 import '../widgets/preference_picker_sheet.dart';
 import '../widgets/settings_appearance_card.dart';
 import '../widgets/settings_expense_prefs_card.dart';
+import '../widgets/settings_notifications_card.dart';
 import '../widgets/settings_security_card.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -487,7 +488,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(height: 24),
 
-                    // Section 3: Security & Account
+                    // Section 3: Notifications
+                    _SectionHeader(
+                      icon: LucideIcons.bell,
+                      title: 'Notifications',
+                      subtitle:
+                          'Manage on-device deadline alerts, budget warnings, and morning digest.',
+                    ),
+                    const SizedBox(height: 10),
+                    const SettingsNotificationsCard(),
+                    const SizedBox(height: 24),
+
+                    // Section 4: Security & Account
                     _SectionHeader(
                       icon: LucideIcons.shield_check,
                       title: 'Security & Account',

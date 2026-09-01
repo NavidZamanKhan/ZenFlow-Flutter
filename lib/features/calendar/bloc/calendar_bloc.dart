@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/cache/client_cache.dart';
+import '../../../core/services/notification_service.dart';
 import '../../tasks/models/task_item.dart';
 import '../../tasks/services/tasks_service.dart';
 import '../models/calendar_item.dart';
@@ -14,14 +15,17 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
   final CalendarService _calendarService;
   final TasksService _tasksService;
   final ClientCache _cache;
+  final NotificationService _notificationService;
 
   CalendarBloc({
     CalendarService? calendarService,
     TasksService? tasksService,
     ClientCache? cache,
+    NotificationService? notificationService,
   })  : _calendarService = calendarService ?? CalendarService(),
         _tasksService = tasksService ?? TasksService(),
         _cache = cache ?? ClientCache.instance,
+        _notificationService = notificationService ?? NotificationService(),
         super(_getInitialState(cache ?? ClientCache.instance)) {
     on<LoadCalendarEvent>(_onLoadCalendar);
     on<SelectDateEvent>(_onSelectDate);
@@ -91,6 +95,13 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
         items: mergedItems,
         status: CalendarStatus.success,
       ));
+
+      // Auto-schedule 15m alerts for upcoming events
+      for (final ev in remoteEvents) {
+        if (ev.type == CalendarItemType.event && !ev.isCompleted) {
+          unawaited(_notificationService.scheduleEventReminder(ev));
+        }
+      }
     } catch (_) {
       emit(state.copyWith(status: CalendarStatus.success));
     }
@@ -107,7 +118,6 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
         state.selectedDate!.year == target.year &&
         state.selectedDate!.month == target.month &&
         state.selectedDate!.day == target.day) {
-      // Tap again to unfocus and show entire month overview!
       emit(state.copyWith(clearSelectedDate: true));
     } else {
       emit(state.copyWith(
@@ -161,6 +171,10 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
     _cache.set(_cacheKey, optimisticList);
     emit(state.copyWith(items: optimisticList, status: CalendarStatus.success));
 
+    if (event.item.type == CalendarItemType.event) {
+      unawaited(_notificationService.scheduleEventReminder(optimisticItem));
+    }
+
     try {
       if (event.item.type == CalendarItemType.taskDeadline) {
         String? dueTimeStr;
@@ -204,8 +218,12 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
             .toList();
         _cache.set(_cacheKey, updated);
         emit(state.copyWith(items: updated));
+
+        unawaited(_notificationService.cancelEventReminder(tempId));
+        unawaited(_notificationService.scheduleEventReminder(created));
       }
     } catch (_) {
+      unawaited(_notificationService.cancelEventReminder(tempId));
       _cache.set(_cacheKey, previousItems);
       emit(state.copyWith(items: previousItems));
     }
@@ -247,6 +265,8 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
         state.items.where((i) => i.id != event.itemId).toList();
     _cache.set(_cacheKey, updated);
     emit(state.copyWith(items: updated));
+
+    unawaited(_notificationService.cancelEventReminder(event.itemId));
 
     try {
       if (event.itemId.startsWith('task_')) {

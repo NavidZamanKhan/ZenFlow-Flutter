@@ -10,12 +10,18 @@ class GoogleAuthService {
   static const String iosClientId =
       '680417209345-9c06kkp0scqgvhelptme63t1hd4e3653.apps.googleusercontent.com';
 
+  // Android Client ID
+  static const String androidClientId =
+      '680417209345-f15slv6fprp1ud679l8701qmn2lrhlf2.apps.googleusercontent.com';
+
   final GoogleSignIn _googleSignIn;
 
   GoogleAuthService({GoogleSignIn? googleSignIn})
       : _googleSignIn = googleSignIn ??
             GoogleSignIn(
-              clientId: Platform.isIOS ? iosClientId : null,
+              clientId: Platform.isIOS
+                  ? iosClientId
+                  : (Platform.isAndroid ? androidClientId : null),
               serverClientId: webClientId,
               scopes: const ['email', 'profile', 'openid'],
             );

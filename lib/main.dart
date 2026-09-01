@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'core/services/currency_service.dart';
+import 'core/services/notification_service.dart';
 import 'core/theme/bloc/theme_bloc.dart';
 import 'core/theme/bloc/theme_state.dart';
 import 'core/theme/zenflow_theme.dart';
@@ -11,8 +12,10 @@ import 'features/auth/views/auth_gate.dart';
 import 'features/profile/bloc/profile_bloc.dart';
 import 'features/profile/bloc/profile_event.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Initialize native notification engine
+  await NotificationService().initialize();
   // Fetch live market exchange rates on startup
   CurrencyService().fetchExchangeRates();
 

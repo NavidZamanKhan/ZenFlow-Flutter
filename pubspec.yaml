@@ -41,7 +41,7 @@ dependencies:
   equatable: ^2.1.0
   google_sign_in: ^6.2.1
   dio: ^5.11.0
-  flutter_secure_storage: ^11.0.0
+  flutter_secure_storage: ^9.2.4
   flutter_local_notifications: ^18.0.1
   timezone: ^0.10.0
 dev_dependencies:

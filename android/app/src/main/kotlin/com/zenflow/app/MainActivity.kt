@@ -1,4 +1,4 @@
-package com.example.zenflow_flutter
+package com.zenflow.app
 
 import io.flutter.embedding.android.FlutterActivity
 

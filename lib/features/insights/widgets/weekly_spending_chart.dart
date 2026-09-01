@@ -42,13 +42,22 @@ class _WeeklySpendingChartState extends State<WeeklySpendingChart>
       parent: _controller,
       curve: Curves.easeOutCubic,
     );
-    _controller.forward();
+    final hasData = widget.weeklyAmounts.any((a) => a > 0);
+    if (hasData) {
+      _controller.forward();
+    }
   }
 
   @override
   void didUpdateWidget(covariant WeeklySpendingChart oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!listEquals(oldWidget.weeklyAmounts, widget.weeklyAmounts)) {
+    final oldHasData = oldWidget.weeklyAmounts.any((a) => a > 0);
+    final newHasData = widget.weeklyAmounts.any((a) => a > 0);
+
+    if (!oldHasData && newHasData) {
+      _controller.forward(from: 0.0);
+    } else if (newHasData &&
+        !listEquals(oldWidget.weeklyAmounts, widget.weeklyAmounts)) {
       _controller.forward(from: 0.0);
     }
   }

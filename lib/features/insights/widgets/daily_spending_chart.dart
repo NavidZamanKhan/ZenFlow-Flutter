@@ -41,13 +41,18 @@ class _DailySpendingChartState extends State<DailySpendingChart>
       parent: _controller,
       curve: Curves.easeOutCubic,
     );
-    _controller.forward();
+    if (widget.points.isNotEmpty) {
+      _controller.forward();
+    }
   }
 
   @override
   void didUpdateWidget(covariant DailySpendingChart oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!listEquals(oldWidget.points, widget.points)) {
+    if (oldWidget.points.isEmpty && widget.points.isNotEmpty) {
+      _controller.forward(from: 0.0);
+    } else if (widget.points.isNotEmpty &&
+        !listEquals(oldWidget.points, widget.points)) {
       _controller.forward(from: 0.0);
     }
   }

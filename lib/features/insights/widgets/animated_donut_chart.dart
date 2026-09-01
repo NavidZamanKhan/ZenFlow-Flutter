@@ -45,13 +45,18 @@ class _AnimatedDonutChartState extends State<AnimatedDonutChart>
       parent: _controller,
       curve: Curves.easeOutCubic,
     );
-    _controller.forward();
+    if (widget.segments.isNotEmpty) {
+      _controller.forward();
+    }
   }
 
   @override
   void didUpdateWidget(covariant AnimatedDonutChart oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!listEquals(oldWidget.segments, widget.segments)) {
+    if (oldWidget.segments.isEmpty && widget.segments.isNotEmpty) {
+      _controller.forward(from: 0.0);
+    } else if (widget.segments.isNotEmpty &&
+        !listEquals(oldWidget.segments, widget.segments)) {
       _controller.forward(from: 0.0);
     }
   }

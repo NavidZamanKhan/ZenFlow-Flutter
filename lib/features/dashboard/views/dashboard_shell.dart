@@ -15,13 +15,16 @@ import '../../calendar/bloc/calendar_event.dart';
 import '../../calendar/views/calendar_screen.dart';
 import '../../expenses/bloc/expenses_bloc.dart';
 import '../../expenses/bloc/expenses_event.dart';
+import '../../expenses/bloc/expenses_state.dart';
 import '../../expenses/views/expenses_screen.dart';
 import '../../insights/bloc/insights_bloc.dart';
+import '../../insights/bloc/insights_event.dart';
 import '../../insights/views/insights_screen.dart';
 import '../../notifications/bloc/notifications_bloc.dart';
 import '../../notifications/bloc/notifications_event.dart';
 import '../../profile/bloc/profile_bloc.dart';
 import '../../profile/bloc/profile_event.dart';
+import '../../profile/bloc/profile_state.dart';
 import '../../tasks/bloc/tasks_bloc.dart';
 import '../../tasks/bloc/tasks_event.dart';
 import '../../tasks/views/tasks_screen.dart';
@@ -87,6 +90,31 @@ class _DashboardAuthSyncListener extends StatelessWidget {
                     expenses: state.expenses,
                     budget: state.budget,
                   ),
+                );
+          },
+        ),
+        BlocListener<ProfileBloc, ProfileState>(
+          listenWhen: (previous, current) =>
+              previous.profile.currency != current.profile.currency,
+          listener: (context, state) {
+            // When user changes currency in Settings or Profile, sync Insights, Expenses, and Dashboard immediately
+            final newCur = state.profile.currency;
+            context.read<InsightsBloc>().add(
+                  RefreshInsightsEvent(activeCurrency: newCur),
+                );
+            context.read<ExpensesBloc>().add(const FetchExpenses());
+            context.read<DashboardBloc>().add(const DashboardLoadRequested());
+          },
+        ),
+        BlocListener<ExpensesBloc, ExpensesState>(
+          listenWhen: (previous, current) =>
+              previous.expenses != current.expenses ||
+              previous.monthlyTotalBudget != current.monthlyTotalBudget,
+          listener: (context, state) {
+            // When expenses or budget change, update Insights in real-time
+            final activeCur = context.read<ProfileBloc>().state.profile.currency;
+            context.read<InsightsBloc>().add(
+                  RefreshInsightsEvent(activeCurrency: activeCur),
                 );
           },
         ),

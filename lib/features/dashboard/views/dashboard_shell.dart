@@ -232,13 +232,50 @@ class _DashboardShellBodyState extends State<_DashboardShellBody>
           onTap: () => FocusScope.of(context).unfocus(),
           child: Scaffold(
             extendBody: true,
-            body: _bodyFor(context, state),
+            body: _buildFadedBody(context, state),
             bottomNavigationBar: _ZenBottomNavigation(
               selectedIndex: state.selectedTab,
             ),
           ),
         ),
       );
+
+  Widget _buildFadedBody(BuildContext context, DashboardState state) {
+    final mediaQuery = MediaQuery.of(context);
+    final bottomInset = mediaQuery.padding.bottom;
+    final screenHeight = mediaQuery.size.height;
+
+    if (screenHeight <= 0) return _bodyFor(context, state);
+
+    // Floating bar geometry: height = 58, margin = 14 + bottomInset
+    // Top of bar is (58 + 14 + bottomInset) from bottom
+    // Midpoint of bar is (28 + 14 + bottomInset) from bottom
+    final pillTop = (screenHeight - (58 + 14 + bottomInset)) / screenHeight;
+    final pillMid = (screenHeight - (28 + 14 + bottomInset)) / screenHeight;
+
+    return ShaderMask(
+      shaderCallback: (Rect bounds) {
+        return LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          stops: [
+            0.0,
+            pillTop.clamp(0.0, 1.0),
+            pillMid.clamp(0.0, 1.0),
+            1.0,
+          ],
+          colors: const [
+            Colors.black,
+            Colors.black,
+            Colors.transparent,
+            Colors.transparent,
+          ],
+        ).createShader(bounds);
+      },
+      blendMode: BlendMode.dstIn,
+      child: _bodyFor(context, state),
+    );
+  }
 
   Widget _bodyFor(BuildContext context, DashboardState state) {
     if (state.selectedTab == 0) {

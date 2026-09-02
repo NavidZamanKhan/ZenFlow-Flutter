@@ -225,20 +225,37 @@ class _DashboardShellBodyState extends State<_DashboardShellBody>
   }
 
   @override
-  Widget build(BuildContext context) =>
-      BlocBuilder<DashboardBloc, DashboardState>(
-        builder: (context, state) => GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () => FocusScope.of(context).unfocus(),
-          child: Scaffold(
-            extendBody: true,
-            body: _buildFadedBody(context, state),
-            bottomNavigationBar: _ZenBottomNavigation(
-              selectedIndex: state.selectedTab,
-            ),
+  Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final bottomInset = mediaQuery.padding.bottom;
+
+    return BlocBuilder<DashboardBloc, DashboardState>(
+      builder: (context, state) => GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: Scaffold(
+          body: Stack(
+            children: [
+              // Layer 1: Full-height page content with smooth gradient fade to midpoint of floating pill
+              Positioned.fill(
+                child: _buildFadedBody(context, state),
+              ),
+
+              // Layer 2: Floating Glassmorphic Bottom Navigation Bar
+              Positioned(
+                left: 16,
+                right: 16,
+                bottom: 14 + bottomInset,
+                child: _ZenBottomNavigation(
+                  selectedIndex: state.selectedTab,
+                ),
+              ),
+            ],
           ),
         ),
-      );
+      ),
+    );
+  }
 
   Widget _buildFadedBody(BuildContext context, DashboardState state) {
     final mediaQuery = MediaQuery.of(context);
@@ -247,11 +264,13 @@ class _DashboardShellBodyState extends State<_DashboardShellBody>
 
     if (screenHeight <= 0) return _bodyFor(context, state);
 
-    // Floating bar geometry: height = 58, margin = 14 + bottomInset
-    // Top of bar is (58 + 14 + bottomInset) from bottom
-    // Midpoint of bar is (28 + 14 + bottomInset) from bottom
-    final pillTop = (screenHeight - (58 + 14 + bottomInset)) / screenHeight;
-    final pillMid = (screenHeight - (28 + 14 + bottomInset)) / screenHeight;
+    // Floating bar geometry:
+    // Bar height = 58
+    // Bottom offset = 14 + bottomInset
+    // Top of bar from bottom of screen = 58 + 14 + bottomInset = 72 + bottomInset
+    // Midpoint of bar from bottom of screen = 29 + 14 + bottomInset = 43 + bottomInset
+    final pillTop = (screenHeight - (72 + bottomInset)) / screenHeight;
+    final pillMid = (screenHeight - (43 + bottomInset)) / screenHeight;
 
     return ShaderMask(
       shaderCallback: (Rect bounds) {
@@ -313,138 +332,134 @@ class _ZenBottomNavigation extends StatelessWidget {
     final isIos = defaultTargetPlatform == TargetPlatform.iOS;
     final totalTabs = _DashboardShellBody.destinations.length;
 
-    return SafeArea(
-      top: false,
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: zen.isDark ? .24 : .08),
-              blurRadius: isIos ? 28 : 20,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-            child: Container(
-              padding: const EdgeInsets.all(5),
-              decoration: BoxDecoration(
-                color: zen.isDark
-                    ? zen.card.withValues(alpha: .85)
-                    : Colors.white.withValues(alpha: .88),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: zen.border.withValues(alpha: zen.isDark ? .4 : .8),
-                  width: 1,
-                ),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: zen.isDark ? .24 : .08),
+            blurRadius: isIos ? 28 : 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            padding: const EdgeInsets.all(5),
+            decoration: BoxDecoration(
+              color: zen.isDark
+                  ? zen.card.withValues(alpha: .85)
+                  : Colors.white.withValues(alpha: .88),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: zen.border.withValues(alpha: zen.isDark ? .4 : .8),
+                width: 1,
               ),
-              child: SizedBox(
-                height: 58,
-                child: Stack(
-                  children: [
-                    // Continuous Silky Smooth Sliding Background Pill
-                    IgnorePointer(
-                      child: AnimatedAlign(
-                        duration: const Duration(milliseconds: 360),
-                        curve: Curves.easeOutCubic,
-                        alignment: Alignment(
-                          -1.0 + (2.0 * selectedIndex / (totalTabs - 1)),
-                          0,
-                        ),
-                        child: FractionallySizedBox(
-                          widthFactor: 1 / totalTabs,
-                          heightFactor: 1,
-                          child: Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 2),
-                            decoration: BoxDecoration(
-                              color: zen.isDark
-                                  ? zen.accent.withValues(alpha: .22)
-                                  : zen.accentSoft,
-                              borderRadius: BorderRadius.circular(18),
-                              border: Border.all(
-                                color: zen.accent.withValues(
-                                  alpha: isIos ? .28 : .18,
-                                ),
-                                width: 1,
+            ),
+            child: SizedBox(
+              height: 58,
+              child: Stack(
+                children: [
+                  // Continuous Silky Smooth Sliding Background Pill
+                  IgnorePointer(
+                    child: AnimatedAlign(
+                      duration: const Duration(milliseconds: 360),
+                      curve: Curves.easeOutCubic,
+                      alignment: Alignment(
+                        -1.0 + (2.0 * selectedIndex / (totalTabs - 1)),
+                        0,
+                      ),
+                      child: FractionallySizedBox(
+                        widthFactor: 1 / totalTabs,
+                        heightFactor: 1,
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 2),
+                          decoration: BoxDecoration(
+                            color: zen.isDark
+                                ? zen.accent.withValues(alpha: .22)
+                                : zen.accentSoft,
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(
+                              color: zen.accent.withValues(
+                                alpha: isIos ? .28 : .18,
                               ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: zen.accent.withValues(
-                                    alpha: isIos ? .16 : .10,
-                                  ),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 3),
-                                ),
-                              ],
+                              width: 1,
                             ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: zen.accent.withValues(
+                                  alpha: isIos ? .16 : .10,
+                                ),
+                                blurRadius: 12,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
                           ),
                         ),
                       ),
                     ),
+                  ),
 
-                    // Interactive Tab Buttons Layer
-                    Row(
-                      children: List.generate(totalTabs, (index) {
-                        final destination =
-                            _DashboardShellBody.destinations[index];
-                        final isSelected = selectedIndex == index;
+                  // Interactive Tab Buttons Layer
+                  Row(
+                    children: List.generate(totalTabs, (index) {
+                      final destination =
+                          _DashboardShellBody.destinations[index];
+                      final isSelected = selectedIndex == index;
 
-                        return Expanded(
-                          child: InkWell(
-                            onTap: () {
-                              HapticFeedback.selectionClick();
-                              context.read<DashboardBloc>().add(
-                                    DashboardTabSelected(index),
-                                  );
-                            },
-                            borderRadius: BorderRadius.circular(18),
-                            splashColor: Colors.transparent,
-                            highlightColor: Colors.transparent,
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                AnimatedScale(
-                                  duration: const Duration(milliseconds: 240),
-                                  curve: Curves.easeOutBack,
-                                  scale: isSelected ? 1.08 : 0.92,
-                                  child: Icon(
-                                    destination.icon,
-                                    size: isSelected ? 20 : 19,
-                                    color: isSelected
-                                        ? zen.accent
-                                        : zen.textMuted,
-                                  ),
+                      return Expanded(
+                        child: InkWell(
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            context.read<DashboardBloc>().add(
+                                  DashboardTabSelected(index),
+                                );
+                          },
+                          borderRadius: BorderRadius.circular(18),
+                          splashColor: Colors.transparent,
+                          highlightColor: Colors.transparent,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              AnimatedScale(
+                                duration: const Duration(milliseconds: 240),
+                                curve: Curves.easeOutBack,
+                                scale: isSelected ? 1.08 : 0.92,
+                                child: Icon(
+                                  destination.icon,
+                                  size: isSelected ? 20 : 19,
+                                  color: isSelected
+                                      ? zen.accent
+                                      : zen.textMuted,
                                 ),
-                                const SizedBox(height: 3),
-                                AnimatedDefaultTextStyle(
-                                  duration: const Duration(milliseconds: 200),
-                                  style: AppTextStyles.labelSmall(
-                                    isSelected ? zen.accent : zen.textMuted,
-                                  ).copyWith(
-                                    fontWeight: isSelected
-                                        ? FontWeight.w700
-                                        : FontWeight.w500,
-                                    fontSize: 10.5,
-                                  ),
-                                  child: Text(
-                                    destination.label,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
+                              ),
+                              const SizedBox(height: 3),
+                              AnimatedDefaultTextStyle(
+                                duration: const Duration(milliseconds: 200),
+                                style: AppTextStyles.labelSmall(
+                                  isSelected ? zen.accent : zen.textMuted,
+                                ).copyWith(
+                                  fontWeight: isSelected
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
+                                  fontSize: 10.5,
                                 ),
-                              ],
-                            ),
+                                child: Text(
+                                  destination.label,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
                           ),
-                        );
-                      }),
-                    ),
-                  ],
-                ),
+                        ),
+                      );
+                    }),
+                  ),
+                ],
               ),
             ),
           ),

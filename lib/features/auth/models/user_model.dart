@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../../../core/constants/api_endpoints.dart';
 
 class UserModel extends Equatable {
   final String id;
@@ -17,12 +18,26 @@ class UserModel extends Equatable {
     this.hasPassword = true,
   });
 
+  static String? resolveAvatarUrl(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return null;
+    final trimmed = raw.trim();
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed;
+    }
+    final normalizedPath = trimmed.startsWith('/') ? trimmed : '/$trimmed';
+    return '${ApiEndpoints.baseUrl}$normalizedPath';
+  }
+
   factory UserModel.fromJson(Map<String, dynamic> json) {
+    final rawAvatar = json['avatar_url']?.toString() ??
+        json['avatar']?.toString() ??
+        json['avatarUrl']?.toString();
+
     return UserModel(
       id: json['id']?.toString() ?? '',
       email: json['email']?.toString() ?? '',
       fullName: json['full_name']?.toString() ?? json['name']?.toString() ?? '',
-      avatar: json['avatar']?.toString(),
+      avatar: resolveAvatarUrl(rawAvatar),
       emailVerified: json['email_verified'] == true,
       hasPassword: json['has_password'] != false,
     );

@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
 
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/zenflow_theme.dart';
+import '../../../core/widgets/zen_avatar.dart';
 import '../../../core/widgets/zen_button.dart';
 import '../../../core/widgets/zen_text_field.dart';
+import '../bloc/profile_bloc.dart';
+import '../bloc/profile_event.dart';
+import '../bloc/profile_state.dart';
 import '../models/user_profile.dart';
+import 'avatar_picker_bottom_sheet.dart';
 
 class EditProfileBottomSheet extends StatefulWidget {
   final UserProfile initialProfile;
@@ -76,6 +82,20 @@ class _EditProfileBottomSheetState extends State<EditProfileBottomSheet> {
     Navigator.of(context).pop();
   }
 
+  void _openAvatarPicker(BuildContext context, UserProfile currentProfile) {
+    AvatarPickerBottomSheet.show(
+      context,
+      hasExistingAvatar: currentProfile.avatarUrl != null &&
+          currentProfile.avatarUrl!.isNotEmpty,
+      onImageSelected: (path) {
+        context.read<ProfileBloc>().add(UploadAvatarEvent(path));
+      },
+      onRemoveAvatar: () {
+        context.read<ProfileBloc>().add(const DeleteAvatarEvent());
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final zen = context.zenColors;
@@ -130,6 +150,24 @@ class _EditProfileBottomSheetState extends State<EditProfileBottomSheet> {
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 18),
+
+            // Centered Avatar with Camera Badge
+            BlocBuilder<ProfileBloc, ProfileState>(
+              builder: (context, state) {
+                final activeProfile = state.profile;
+                return Center(
+                  child: ZenAvatar(
+                    avatarUrl: activeProfile.avatarUrl,
+                    initials: activeProfile.initials,
+                    size: 76,
+                    showCameraBadge: true,
+                    isLoading: state.isUploadingAvatar,
+                    onTap: () => _openAvatarPicker(context, activeProfile),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 18),
 

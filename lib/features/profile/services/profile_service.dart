@@ -5,6 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../core/constants/api_endpoints.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/services/currency_service.dart';
+import '../../auth/models/user_model.dart';
 import '../models/user_profile.dart';
 
 class ProfileService {
@@ -27,6 +28,7 @@ class ProfileService {
           fullName: data['fullName'] ?? 'Navid Zaman Khan',
           username: data['username'] ?? 'navid',
           email: data['email'] ?? 'navid@zenflow.app',
+          avatarUrl: UserModel.resolveAvatarUrl(data['avatarUrl']?.toString()),
           phone: data['phone'] ?? '',
           country: data['country'] ?? 'Bangladesh',
           timeZone: data['timeZone'] ?? 'Asia/Dhaka',
@@ -47,9 +49,10 @@ class ProfileService {
     String fullName = localProfile?.fullName ?? 'Navid';
     String email = localProfile?.email ?? 'navid@zenflow.app';
     String username = localProfile?.username ?? 'navid';
+    String? avatarUrl = localProfile?.avatarUrl;
     bool hasPassword = localProfile?.hasPassword ?? true;
 
-    // 1. Fetch user profile from /api/me/
+    // 1. Fetch user profile from /api/auth/me/
     try {
       final meResponse = await _apiClient.dio.get(ApiEndpoints.me);
       if (meResponse.statusCode == 200 && meResponse.data != null) {
@@ -58,6 +61,10 @@ class ProfileService {
         email = data['email'] ?? email;
         username = email.contains('@') ? email.split('@').first : username;
         hasPassword = data['has_password'] != false;
+        final rawAvatar = data['avatar_url'] ?? data['avatar'] ?? data['avatarUrl'];
+        if (rawAvatar != null) {
+          avatarUrl = UserModel.resolveAvatarUrl(rawAvatar.toString());
+        }
       }
     } catch (_) {}
 
@@ -78,11 +85,13 @@ class ProfileService {
               fullName: fullName,
               username: username,
               email: email,
+              avatarUrl: avatarUrl,
             ))
         .copyWith(
       fullName: fullName,
       username: username,
       email: email,
+      avatarUrl: avatarUrl,
       currency: activeCurrency,
       hasPassword: hasPassword,
     );
@@ -99,6 +108,7 @@ class ProfileService {
           'fullName': profile.fullName,
           'username': profile.username,
           'email': profile.email,
+          'avatarUrl': profile.avatarUrl,
           'phone': profile.phone,
           'country': profile.country,
           'timeZone': profile.timeZone,
@@ -208,6 +218,84 @@ class ProfileService {
     } on DioException catch (e) {
       throw Exception(
         e.response?.data?['detail'] ?? 'Failed to update profile on server.',
+      );
+    }
+  }
+
+  /// Uploads a new profile image to the backend via multipart/form-data
+  Future<UserProfile> uploadAvatar({required String imagePath}) async {
+    final fileName = imagePath.split('/').last;
+    final formData = FormData.fromMap({
+      'avatar': await MultipartFile.fromFile(
+        imagePath,
+        filename: fileName,
+      ),
+    });
+
+    try {
+      final response = await _apiClient.dio.patch(
+        ApiEndpoints.me,
+        data: formData,
+        options: Options(
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data as Map<String, dynamic>;
+        final rawAvatar = data['avatar_url'] ?? data['avatar'] ?? data['avatarUrl'];
+        final resolvedAvatarUrl = UserModel.resolveAvatarUrl(rawAvatar?.toString());
+
+        final current = (await getProfile()) ??
+            UserProfile(
+              fullName: data['full_name'] ?? 'Navid',
+              username: 'navid',
+              email: data['email'] ?? '',
+            );
+
+        final updated = current.copyWith(avatarUrl: resolvedAvatarUrl);
+        await saveLocalProfile(updated);
+        return updated;
+      } else {
+        throw Exception('Failed to upload profile photo.');
+      }
+    } on DioException catch (e) {
+      final msg = e.response?.data?['avatar']?.toString() ??
+          e.response?.data?['detail']?.toString() ??
+          'Failed to upload profile photo.';
+      throw Exception(msg);
+    }
+  }
+
+  /// Removes the user's avatar on the backend
+  Future<UserProfile> deleteAvatar() async {
+    try {
+      final response = await _apiClient.dio.patch(
+        ApiEndpoints.me,
+        data: {
+          'avatar': null,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final current = (await getProfile()) ??
+            const UserProfile(
+              fullName: 'Navid',
+              username: 'navid',
+              email: '',
+            );
+
+        final updated = current.copyWith(clearAvatar: true);
+        await saveLocalProfile(updated);
+        return updated;
+      } else {
+        throw Exception('Failed to remove profile photo.');
+      }
+    } on DioException catch (e) {
+      throw Exception(
+        e.response?.data?['detail'] ?? 'Failed to remove profile photo.',
       );
     }
   }

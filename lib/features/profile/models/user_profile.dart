@@ -4,6 +4,7 @@ class UserProfile extends Equatable {
   final String fullName;
   final String username;
   final String email;
+  final String? avatarUrl;
   final String phone;
   final String country;
   final String timeZone;
@@ -21,6 +22,7 @@ class UserProfile extends Equatable {
     required this.fullName,
     required this.username,
     required this.email,
+    this.avatarUrl,
     this.phone = '',
     this.country = 'Bangladesh',
     this.timeZone = 'Asia/Dhaka',
@@ -48,6 +50,8 @@ class UserProfile extends Equatable {
     String? fullName,
     String? username,
     String? email,
+    String? avatarUrl,
+    bool clearAvatar = false,
     String? phone,
     String? country,
     String? timeZone,
@@ -65,6 +69,7 @@ class UserProfile extends Equatable {
       fullName: fullName ?? this.fullName,
       username: username ?? this.username,
       email: email ?? this.email,
+      avatarUrl: clearAvatar ? null : (avatarUrl ?? this.avatarUrl),
       phone: phone ?? this.phone,
       country: country ?? this.country,
       timeZone: timeZone ?? this.timeZone,
@@ -86,6 +91,7 @@ class UserProfile extends Equatable {
         fullName,
         username,
         email,
+        avatarUrl,
         phone,
         country,
         timeZone,

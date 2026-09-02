@@ -5,6 +5,7 @@ import 'package:flutter_lucide/flutter_lucide.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/zenflow_theme.dart';
+import '../../../core/widgets/zen_avatar.dart';
 import '../../../core/widgets/zen_badge.dart';
 import '../../../core/widgets/zen_icon_button.dart';
 import '../../auth/models/user_model.dart';
@@ -129,33 +130,11 @@ class DashboardHeader extends StatelessWidget {
             // User Avatar Pill -> opens UserMenuBottomSheet
             BlocBuilder<ProfileBloc, ProfileState>(
               builder: (context, profileState) {
-                final initials = profileState.profile.initials;
-
-                return GestureDetector(
+                return ZenAvatar(
+                  avatarUrl: profileState.profile.avatarUrl,
+                  initials: profileState.profile.initials,
+                  size: 40,
                   onTap: () => UserMenuBottomSheet.show(context),
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: zen.accent,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: zen.accent.withValues(alpha: 0.25),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Center(
-                      child: Text(
-                        initials,
-                        style: AppTextStyles.labelMedium(Colors.white).copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ),
                 );
               },
             ),

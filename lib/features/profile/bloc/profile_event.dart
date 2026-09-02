@@ -22,6 +22,19 @@ class UpdateProfileEvent extends ProfileEvent {
   List<Object?> get props => [profile];
 }
 
+class UploadAvatarEvent extends ProfileEvent {
+  final String imagePath;
+
+  const UploadAvatarEvent(this.imagePath);
+
+  @override
+  List<Object?> get props => [imagePath];
+}
+
+class DeleteAvatarEvent extends ProfileEvent {
+  const DeleteAvatarEvent();
+}
+
 class UpdateExpensePreferencesEvent extends ProfileEvent {
   final String currency;
   final String dateFormat;

@@ -5,6 +5,7 @@ import 'package:flutter_lucide/flutter_lucide.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/zenflow_theme.dart';
+import '../../../core/widgets/zen_avatar.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../../auth/bloc/auth_event.dart';
 import '../bloc/profile_bloc.dart';
@@ -115,22 +116,10 @@ class UserMenuBottomSheet extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: zen.accent,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Center(
-                          child: Text(
-                            profile.initials,
-                            style: AppTextStyles.headingSmall(Colors.white)
-                                .copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
+                      ZenAvatar(
+                        avatarUrl: profile.avatarUrl,
+                        initials: profile.initials,
+                        size: 44,
                       ),
                       const SizedBox(width: 12),
                       Expanded(

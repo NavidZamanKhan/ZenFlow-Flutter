@@ -12,6 +12,8 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
         super(ProfileState.initial()) {
     on<LoadProfileEvent>(_onLoad);
     on<UpdateProfileEvent>(_onUpdateProfile);
+    on<UploadAvatarEvent>(_onUploadAvatar);
+    on<DeleteAvatarEvent>(_onDeleteAvatar);
     on<UpdateExpensePreferencesEvent>(_onUpdatePreferences);
   }
 
@@ -48,6 +50,52 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
       await _service.updateProfile(profile: event.profile);
     } catch (_) {
       // Keep optimistic state
+    }
+  }
+
+  Future<void> _onUploadAvatar(
+    UploadAvatarEvent event,
+    Emitter<ProfileState> emit,
+  ) async {
+    emit(state.copyWith(isUploadingAvatar: true));
+
+    try {
+      final updated = await _service.uploadAvatar(imagePath: event.imagePath);
+      emit(state.copyWith(
+        profile: updated,
+        isUploadingAvatar: false,
+        status: ProfileStatus.success,
+        message: 'Profile photo updated successfully',
+      ));
+    } catch (e) {
+      emit(state.copyWith(
+        isUploadingAvatar: false,
+        status: ProfileStatus.failure,
+        message: e.toString().replaceFirst('Exception: ', ''),
+      ));
+    }
+  }
+
+  Future<void> _onDeleteAvatar(
+    DeleteAvatarEvent event,
+    Emitter<ProfileState> emit,
+  ) async {
+    emit(state.copyWith(isUploadingAvatar: true));
+
+    try {
+      final updated = await _service.deleteAvatar();
+      emit(state.copyWith(
+        profile: updated,
+        isUploadingAvatar: false,
+        status: ProfileStatus.success,
+        message: 'Profile photo removed',
+      ));
+    } catch (e) {
+      emit(state.copyWith(
+        isUploadingAvatar: false,
+        status: ProfileStatus.failure,
+        message: e.toString().replaceFirst('Exception: ', ''),
+      ));
     }
   }
 

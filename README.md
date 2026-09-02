@@ -14,37 +14,129 @@ ZenFlow Mobile provides a unified on-the-go experience for managing daily tasks,
 
 ### 1. Core Workspace
 
-| Dashboard Overview | Task Management | Calendar & Schedule |
-| :---: | :---: | :---: |
-| <img src="assets/screenshots/01_dashboard_overview.png" width="260" alt="Dashboard Overview" /> | <img src="assets/screenshots/02_tasks_management.png" width="260" alt="Task Management" /> | <img src="assets/screenshots/03_calendar_schedule.png" width="260" alt="Calendar Schedule" /> |
-| Daily focus, task counters, productivity charts, and floating bottom navigation. | Priority tags, status filters, search, and quick completion. | Monthly calendar grid, daily agendas, and event deadline markers. |
+<table>
+  <thead>
+    <tr>
+      <th width="33.33%" align="center">Dashboard Overview</th>
+      <th width="33.33%" align="center">Task Management</th>
+      <th width="33.33%" align="center">Calendar & Schedule</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center" valign="top">
+        <img src="assets/screenshots/01_dashboard_overview.png" width="100%" alt="Dashboard Overview" />
+      </td>
+      <td align="center" valign="top">
+        <img src="assets/screenshots/02_tasks_management.png" width="100%" alt="Task Management" />
+      </td>
+      <td align="center" valign="top">
+        <img src="assets/screenshots/03_calendar_schedule.png" width="100%" alt="Calendar Schedule" />
+      </td>
+    </tr>
+    <tr>
+      <td align="center" valign="top">Daily focus, task counters, productivity charts, and floating bottom navigation.</td>
+      <td align="center" valign="top">Priority tags, status filters, search, and quick completion.</td>
+      <td align="center" valign="top">Monthly calendar grid, daily agendas, and event deadline markers.</td>
+    </tr>
+  </tbody>
+</table>
 
 ---
 
 ### 2. Expenses & Budget Management
 
-| Expenses Tracker | Budget & Category Limits | Spending Analytics |
-| :---: | :---: | :---: |
-| <img src="assets/screenshots/04_expenses_tracker.png" width="260" alt="Expenses Tracker" /> | <img src="assets/screenshots/05_budget_limits.png" width="260" alt="Budget Limits" /> | <img src="assets/screenshots/06_insights_analytics.png" width="260" alt="Spending Analytics" /> |
-| Multi-currency expense balances, category tags, and transaction feeds. | Monthly spending gauges and interactive category limit adjustments. | Distribution donut chart, daily spending averages, and volume counts. |
+<table>
+  <thead>
+    <tr>
+      <th width="33.33%" align="center">Expenses Tracker</th>
+      <th width="33.33%" align="center">Budget & Category Limits</th>
+      <th width="33.33%" align="center">Spending Analytics</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center" valign="top">
+        <img src="assets/screenshots/04_expenses_tracker.png" width="100%" alt="Expenses Tracker" />
+      </td>
+      <td align="center" valign="top">
+        <img src="assets/screenshots/05_budget_limits.png" width="100%" alt="Budget Limits" />
+      </td>
+      <td align="center" valign="top">
+        <img src="assets/screenshots/06_insights_analytics.png" width="100%" alt="Spending Analytics" />
+      </td>
+    </tr>
+    <tr>
+      <td align="center" valign="top">Multi-currency expense balances, category tags, and transaction feeds.</td>
+      <td align="center" valign="top">Monthly spending gauges and interactive category limit adjustments.</td>
+      <td align="center" valign="top">Distribution donut chart, daily spending averages, and volume counts.</td>
+    </tr>
+  </tbody>
+</table>
 
 ---
 
 ### 3. Analytics & Insights
 
-| Spending Trends | Smart Analytics & Health | Notification Center |
-| :---: | :---: | :---: |
-| <img src="assets/screenshots/07_spending_trends.png" width="260" alt="Spending Trends" /> | <img src="assets/screenshots/08_smart_analytics.png" width="260" alt="Smart Analytics" /> | <img src="assets/screenshots/09_notifications_center.png" width="260" alt="Notification Center" /> |
-| Daily wave curves, weekly bar charts, and payment method mixes. | Budget health score, category breakdown, and savings potential. | Unread badge counters, budget threshold warnings, and overdue reminders. |
+<table>
+  <thead>
+    <tr>
+      <th width="33.33%" align="center">Spending Trends</th>
+      <th width="33.33%" align="center">Smart Analytics & Health</th>
+      <th width="33.33%" align="center">Notification Center</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center" valign="top">
+        <img src="assets/screenshots/07_spending_trends.png" width="100%" alt="Spending Trends" />
+      </td>
+      <td align="center" valign="top">
+        <img src="assets/screenshots/08_smart_analytics.png" width="100%" alt="Smart Analytics" />
+      </td>
+      <td align="center" valign="top">
+        <img src="assets/screenshots/09_notifications_center.png" width="100%" alt="Notification Center" />
+      </td>
+    </tr>
+    <tr>
+      <td align="center" valign="top">Daily wave curves, weekly bar charts, and payment method mixes.</td>
+      <td align="center" valign="top">Budget health score, category breakdown, and savings potential.</td>
+      <td align="center" valign="top">Unread badge counters, budget threshold warnings, and overdue reminders.</td>
+    </tr>
+  </tbody>
+</table>
 
 ---
 
 ### 4. Profile, Themes & Preferences
 
-| User Profile | Appearance & Themes | Notification Preferences |
-| :---: | :---: | :---: |
-| <img src="assets/screenshots/10_user_profile.png" width="260" alt="User Profile" /> | <img src="assets/screenshots/11_appearance_themes.png" width="260" alt="Appearance and Themes" /> | <img src="assets/screenshots/12_notifications_settings.png" width="260" alt="Notification Settings" /> |
-| Camera and gallery photo picker, bidirectional cloud avatar sync. | System, Light, and Dark modes with four curated accent palettes. | Task deadline alerts, budget threshold controls, and morning digest scheduler. |
+<table>
+  <thead>
+    <tr>
+      <th width="33.33%" align="center">User Profile</th>
+      <th width="33.33%" align="center">Appearance & Themes</th>
+      <th width="33.33%" align="center">Notification Preferences</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center" valign="top">
+        <img src="assets/screenshots/10_user_profile.png" width="100%" alt="User Profile" />
+      </td>
+      <td align="center" valign="top">
+        <img src="assets/screenshots/11_appearance_themes.png" width="100%" alt="Appearance and Themes" />
+      </td>
+      <td align="center" valign="top">
+        <img src="assets/screenshots/12_notifications_settings.png" width="100%" alt="Notification Settings" />
+      </td>
+    </tr>
+    <tr>
+      <td align="center" valign="top">Camera and gallery photo picker, bidirectional cloud avatar sync.</td>
+      <td align="center" valign="top">System, Light, and Dark modes with four curated accent palettes.</td>
+      <td align="center" valign="top">Task deadline alerts, budget threshold controls, and morning digest scheduler.</td>
+    </tr>
+  </tbody>
+</table>
 
 ---
 

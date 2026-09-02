@@ -5,6 +5,7 @@ import 'package:flutter_lucide/flutter_lucide.dart';
 
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/zenflow_theme.dart';
+import '../../../core/widgets/zen_avatar.dart';
 import '../../../core/widgets/zen_button.dart';
 import '../../../core/widgets/zen_card.dart';
 import '../../../core/widgets/zen_text_field.dart';
@@ -12,6 +13,7 @@ import '../bloc/profile_bloc.dart';
 import '../bloc/profile_event.dart';
 import '../bloc/profile_state.dart';
 import '../models/user_profile.dart';
+import '../widgets/avatar_picker_bottom_sheet.dart';
 import '../widgets/preference_picker_sheet.dart';
 import '../widgets/settings_appearance_card.dart';
 import '../widgets/settings_expense_prefs_card.dart';
@@ -104,10 +106,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
-  void _changeProfilePhoto() {
-    HapticFeedback.selectionClick();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Profile photo picker opened')),
+  void _changeProfilePhoto(UserProfile currentProfile) {
+    HapticFeedback.lightImpact();
+    AvatarPickerBottomSheet.show(
+      context,
+      hasExistingAvatar: currentProfile.avatarUrl != null &&
+          currentProfile.avatarUrl!.isNotEmpty &&
+          currentProfile.avatarUrl != 'null',
+      onImageSelected: (path) {
+        context.read<ProfileBloc>().add(UploadAvatarEvent(path));
+      },
+      onRemoveAvatar: () {
+        context.read<ProfileBloc>().add(const DeleteAvatarEvent());
+      },
     );
   }
 
@@ -171,59 +182,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           // Top Avatar & Edit Button Row
                           Row(
                             children: [
-                              // Avatar with Camera Overlay
-                              Stack(
-                                children: [
-                                  Container(
-                                    width: 62,
-                                    height: 62,
-                                    decoration: BoxDecoration(
-                                      color: zen.accent,
-                                      shape: BoxShape.circle,
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: zen.accent
-                                              .withValues(alpha: 0.28),
-                                          blurRadius: 10,
-                                          offset: const Offset(0, 3),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        profile.initials,
-                                        style: AppTextStyles.headingLarge(
-                                                Colors.white)
-                                            .copyWith(
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  Positioned(
-                                    bottom: 0,
-                                    right: 0,
-                                    child: GestureDetector(
-                                      onTap: _changeProfilePhoto,
-                                      child: Container(
-                                        padding: const EdgeInsets.all(5),
-                                        decoration: BoxDecoration(
-                                          color: zen.accent,
-                                          shape: BoxShape.circle,
-                                          border: Border.all(
-                                            color: zen.card,
-                                            width: 2,
-                                          ),
-                                        ),
-                                        child: const Icon(
-                                          LucideIcons.camera,
-                                          size: 11,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                              ZenAvatar(
+                                avatarUrl: profile.avatarUrl,
+                                initials: profile.initials,
+                                size: 62,
+                                showCameraBadge: true,
+                                isLoading: state.isUploadingAvatar,
+                                onTap: () => _changeProfilePhoto(profile),
                               ),
                               const SizedBox(width: 16),
 

@@ -9,8 +9,10 @@ import '../../../core/widgets/zen_avatar.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../../auth/bloc/auth_event.dart';
 import '../bloc/profile_bloc.dart';
+import '../bloc/profile_event.dart';
 import '../bloc/profile_state.dart';
 import '../views/profile_screen.dart';
+import 'avatar_picker_bottom_sheet.dart';
 
 class UserMenuBottomSheet extends StatelessWidget {
   const UserMenuBottomSheet({super.key});
@@ -119,7 +121,27 @@ class UserMenuBottomSheet extends StatelessWidget {
                       ZenAvatar(
                         avatarUrl: profile.avatarUrl,
                         initials: profile.initials,
-                        size: 44,
+                        size: 46,
+                        showCameraBadge: true,
+                        isLoading: state.isUploadingAvatar,
+                        onTap: () {
+                          AvatarPickerBottomSheet.show(
+                            context,
+                            hasExistingAvatar: profile.avatarUrl != null &&
+                                profile.avatarUrl!.isNotEmpty &&
+                                profile.avatarUrl != 'null',
+                            onImageSelected: (path) {
+                              context
+                                  .read<ProfileBloc>()
+                                  .add(UploadAvatarEvent(path));
+                            },
+                            onRemoveAvatar: () {
+                              context
+                                  .read<ProfileBloc>()
+                                  .add(const DeleteAvatarEvent());
+                            },
+                          );
+                        },
                       ),
                       const SizedBox(width: 12),
                       Expanded(

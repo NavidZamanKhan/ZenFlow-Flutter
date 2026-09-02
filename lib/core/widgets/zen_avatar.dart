@@ -26,8 +26,12 @@ class ZenAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final zen = context.zenColors;
-    final fontSize = size * 0.40;
-    final hasImage = avatarUrl != null && avatarUrl!.trim().isNotEmpty;
+    final fontSize = size * 0.38;
+
+    final hasImage = avatarUrl != null &&
+        avatarUrl!.trim().isNotEmpty &&
+        avatarUrl != 'null' &&
+        (avatarUrl!.startsWith('http://') || avatarUrl!.startsWith('https://'));
 
     Widget avatarContent;
 
@@ -37,19 +41,9 @@ class ZenAvatar extends StatelessWidget {
         width: size,
         height: size,
         fit: BoxFit.cover,
-        placeholder: (_, _) => Container(
-          color: zen.accentSoft,
-          child: Center(
-            child: SizedBox(
-              width: size * 0.4,
-              height: size * 0.4,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation(zen.accent),
-              ),
-            ),
-          ),
-        ),
+        fadeInDuration: const Duration(milliseconds: 200),
+        fadeOutDuration: const Duration(milliseconds: 200),
+        placeholder: (_, _) => _buildInitials(zen, fontSize),
         errorWidget: (_, _, _) => _buildInitials(zen, fontSize),
       );
     } else {
@@ -65,7 +59,7 @@ class ZenAvatar extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: zen.accent.withValues(alpha: 0.25),
-            blurRadius: size * 0.2,
+            blurRadius: size * 0.18,
             offset: Offset(0, size * 0.05),
           ),
         ],
@@ -77,7 +71,7 @@ class ZenAvatar extends StatelessWidget {
             avatarContent,
             if (isLoading)
               Container(
-                color: Colors.black.withValues(alpha: 0.45),
+                color: Colors.black.withValues(alpha: 0.5),
                 child: Center(
                   child: SizedBox(
                     width: size * 0.4,
@@ -95,25 +89,25 @@ class ZenAvatar extends StatelessWidget {
     );
 
     if (showCameraBadge) {
-      final badgeSize = (size * 0.36).clamp(20.0, 32.0);
+      final badgeSize = (size * 0.34).clamp(18.0, 30.0);
       content = Stack(
         clipBehavior: Clip.none,
         children: [
           content,
           Positioned(
-            right: -2,
-            bottom: -2,
+            right: -1,
+            bottom: -1,
             child: Container(
               width: badgeSize,
               height: badgeSize,
               decoration: BoxDecoration(
-                color: zen.card,
+                color: zen.accent,
                 shape: BoxShape.circle,
-                border: Border.all(color: zen.border, width: 1.5),
+                border: Border.all(color: zen.card, width: 2),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.18),
-                    blurRadius: 6,
+                    color: Colors.black.withValues(alpha: 0.22),
+                    blurRadius: 5,
                     offset: const Offset(0, 2),
                   ),
                 ],
@@ -121,8 +115,8 @@ class ZenAvatar extends StatelessWidget {
               child: Center(
                 child: Icon(
                   LucideIcons.camera,
-                  size: badgeSize * 0.55,
-                  color: zen.accent,
+                  size: badgeSize * 0.52,
+                  color: Colors.white,
                 ),
               ),
             ),
@@ -143,11 +137,13 @@ class ZenAvatar extends StatelessWidget {
   }
 
   Widget _buildInitials(dynamic zen, double fontSize) {
+    final cleanInitials =
+        initials.trim().isNotEmpty ? initials.trim().toUpperCase() : 'N';
     return Container(
       color: zen.accent,
       child: Center(
         child: Text(
-          initials,
+          cleanInitials,
           style: AppTextStyles.labelMedium(Colors.white).copyWith(
             fontSize: fontSize,
             fontWeight: FontWeight.w700,

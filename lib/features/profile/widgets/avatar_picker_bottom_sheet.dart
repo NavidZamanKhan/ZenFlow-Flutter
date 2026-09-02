@@ -49,7 +49,17 @@ class AvatarPickerBottomSheet extends StatelessWidget {
         HapticFeedback.mediumImpact();
         onImageSelected(picked.path);
       }
-    } catch (_) {}
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Could not open ${source == ImageSource.camera ? 'camera' : 'gallery'}: ${e.toString().replaceFirst('PlatformException(', '').split(',').first}',
+            ),
+          ),
+        );
+      }
+    }
   }
 
   @override

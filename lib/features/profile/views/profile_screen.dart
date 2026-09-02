@@ -403,25 +403,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       subtitle: 'Choose how you want your workspace to look.',
                     ),
                     const SizedBox(height: 10),
-                    SettingsAppearanceCard(
-                      displayDensity: profile.displayDensity,
-                      onDensityChanged: (density) {
-                        context.read<ProfileBloc>().add(
-                              UpdateExpensePreferencesEvent(
-                                currency: profile.currency,
-                                dateFormat: profile.dateFormat,
-                                numberFormat: profile.numberFormat,
-                                firstDayOfWeek: profile.firstDayOfWeek,
-                                defaultPaymentMethod:
-                                    profile.defaultPaymentMethod,
-                                defaultExpenseCategory:
-                                    profile.defaultExpenseCategory,
-                                is24HourTime: profile.is24HourTime,
-                                displayDensity: density,
-                              ),
-                            );
-                      },
-                    ),
+                    SettingsAppearanceCard(),
                     const SizedBox(height: 24),
 
                     // Section 2: Expense Preferences

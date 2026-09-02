@@ -9,17 +9,9 @@ import '../../../core/theme/bloc/theme_event.dart';
 import '../../../core/theme/bloc/theme_state.dart';
 import '../../../core/theme/zenflow_theme.dart';
 import '../../../core/widgets/zen_card.dart';
-import 'preference_picker_sheet.dart';
 
 class SettingsAppearanceCard extends StatelessWidget {
-  final String displayDensity;
-  final ValueChanged<String> onDensityChanged;
-
-  const SettingsAppearanceCard({
-    super.key,
-    required this.displayDensity,
-    required this.onDensityChanged,
-  });
+  const SettingsAppearanceCard({super.key});
 
   static const _accentColors = [
     (name: 'ZenFlow blue', accent: AppAccentColor.blue),
@@ -162,47 +154,6 @@ class SettingsAppearanceCard extends StatelessWidget {
               const SizedBox(height: 6),
               Text(
                 'Instantly personalizes dashboard chrome and branding.',
-                style: AppTextStyles.labelSmall(zen.textMuted).copyWith(fontSize: 11),
-              ),
-              const SizedBox(height: 22),
-
-              // Display Density
-              Text(
-                'Display density',
-                style: AppTextStyles.labelMedium(zen.textPrimary),
-              ),
-              const SizedBox(height: 6),
-              GestureDetector(
-                onTap: () => PreferencePickerSheet.show(
-                  context,
-                  title: 'Display density',
-                  options: const ['comfortable', 'compact'],
-                  selectedValue: displayDensity,
-                  onSelected: onDensityChanged,
-                ),
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: zen.subtleFill,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: zen.border),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        displayDensity,
-                        style: AppTextStyles.bodyMedium(zen.textPrimary),
-                      ),
-                      Icon(LucideIcons.chevron_down, size: 16, color: zen.textMuted),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Choose between comfortable spacing or data-dense compact layout.',
                 style: AppTextStyles.labelSmall(zen.textMuted).copyWith(fontSize: 11),
               ),
               const SizedBox(height: 18),

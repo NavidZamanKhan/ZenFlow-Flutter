@@ -231,6 +231,7 @@ class _DashboardShellBodyState extends State<_DashboardShellBody>
           behavior: HitTestBehavior.opaque,
           onTap: () => FocusScope.of(context).unfocus(),
           child: Scaffold(
+            extendBody: true,
             body: _bodyFor(context, state),
             bottomNavigationBar: _ZenBottomNavigation(
               selectedIndex: state.selectedTab,
